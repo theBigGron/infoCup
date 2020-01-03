@@ -2,4 +2,4 @@ MERGE_FOLDER: "/home/pag/pytorch_models/model_staging"
 
 MODEL_TYPES: ["actor_target", "actor", "critic_target", "critic"]
 MODEL_CLASSES: ["city", "disease"]
-DATABASE_PATH: "./model.db"
+DATABASE_PATH: "./models.db"

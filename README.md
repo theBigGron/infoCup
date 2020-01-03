@@ -14,3 +14,10 @@ bag1.tar ist eine Datei die folgende Dateien enthält:
 ```bash
 curl  -F 'file=@/home/pag/Development/model_server/exampleModels/bag1.tar' localhost:8087/models --verbose -H "Authorization: Basic 11843e47-3e1b-45ba-9d09-2d154bb9a73l"
 ```
+
+
+
+Download von Models:
+```bash
+curl localhost:8087/get-model --verbose
+```

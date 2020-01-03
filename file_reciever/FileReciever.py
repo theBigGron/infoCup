@@ -1,4 +1,7 @@
-from flask import Flask, request, redirect, Response
+import io
+import sys
+
+from flask import Flask, request, redirect, Response, send_file
 from werkzeug.datastructures import FileStorage
 import uuid
 import tarfile
@@ -38,7 +41,9 @@ sql_create_ref_table = """ CREATE TABLE IF NOT EXISTS max_model (
                             );
                     """
 
-sql_replace_model = """ REPLACE INTO models VALUES (?,?,?,?); """
+sql_get_ref_models = """SELECT * FROM max_model;"""
+
+sql_replace_model = """REPLACE INTO models VALUES (?,?,?,?);"""
 
 
 def setup():
@@ -127,7 +132,30 @@ def return_id():
 @app.route('/get-model', methods=['GET'])
 def return_model():
     if request.method == 'GET':
-        return "Not implemented"
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        c.execute(sql_get_ref_models)
+        models = c.fetchall()
+        conn.commit()
+        conn.close()
+        outer_tar_buffer = io.BytesIO()
+        tar = tarfile.TarFile(mode="w", fileobj=outer_tar_buffer)
+
+        for model in models:
+            model_class = model[0]
+            model_type = model[1]
+            model_bin = io.BytesIO(model[2])
+            info = tarfile.TarInfo(name=f"{model_class}_{model_type}.pth.tar")
+            info.size = len(model_bin.read())
+            model_bin.seek(0)
+            tar.addfile(tarinfo=info, fileobj=model_bin)
+        tar.close()
+
+        outer_tar_buffer.seek(0)
+        return send_file(outer_tar_buffer,
+                         mimetype="application/tar",
+                         as_attachment=True,
+                         attachment_filename="models.tar")
 
 
 if __name__ == '__main__':
