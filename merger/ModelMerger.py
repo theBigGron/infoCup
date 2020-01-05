@@ -13,6 +13,7 @@ from merger.Critic import Critic
 
 sql_select_models = """SELECT model FROM models WHERE model_class LIKE ? AND model_type LIKE ?;"""
 sql_replace_max_model = """REPLACE INTO max_model VALUES (?,?,?);"""
+sql_get_model_count = """SELECT COUNT(*) FROM models;"""
 
 
 class ModelMerger(Thread):
@@ -34,15 +35,17 @@ class ModelMerger(Thread):
     def update(self):
         conn = sqlite3.connect(self.database)
         c = conn.cursor()
-        for class_name in self.model_classes:
-            for type_name in self.model_types:
-                c.execute(sql_select_models, (class_name, type_name))
-                merged_model = self.merge(c.fetchall(), class_name, type_name)
-                buffer = io.BytesIO()
-                torch.save({'state_dict': merged_model.state_dict()}, buffer)
-                data = buffer.getvalue()
-                c.execute(sql_replace_max_model, (class_name, type_name, data))
-        conn.commit()
+        count = c.execute(sql_get_model_count)
+        if count >=8:
+            for class_name in self.model_classes:
+                for type_name in self.model_types:
+                    c.execute(sql_select_models, (class_name, type_name))
+                    merged_model = self.merge(c.fetchall(), class_name, type_name)
+                    buffer = io.BytesIO()
+                    torch.save({'state_dict': merged_model.state_dict()}, buffer)
+                    data = buffer.getvalue()
+                    c.execute(sql_replace_max_model, (class_name, type_name, data))
+            conn.commit()
         conn.close()
 
     def get_model(self, model_type, input_size, output_size, max_size):

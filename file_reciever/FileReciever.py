@@ -1,5 +1,4 @@
 import io
-import sys
 
 from flask import Flask, request, redirect, Response, send_file
 from werkzeug.datastructures import FileStorage
@@ -12,6 +11,8 @@ import sqlite3
     From
     https://flask.palletsprojects.com/en/1.1.x/patterns/fileuploads/
 """
+
+
 DATABASE = "../models.db"
 
 
@@ -46,7 +47,7 @@ sql_get_ref_models = """SELECT * FROM max_model;"""
 sql_replace_model = """REPLACE INTO models VALUES (?,?,?,?);"""
 
 
-def setup():
+def setup_db():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
     c.execute(sql_create_table)
@@ -92,11 +93,12 @@ def save_file(file: FileStorage, client_id):
 @app.route('/models', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
+        req = request
         # check if the post request has the file part
-        if 'file' not in request.files:
+        if 'models' not in request.files:
             print('No file part')
             return redirect(request.url)
-        file = request.files['file']
+        file = request.files['models']
         print(file.filename)
         # if user does not select file, browser also
         # submit an empty part without filename
@@ -158,6 +160,7 @@ def return_model():
                          attachment_filename="models.tar")
 
 
+
 if __name__ == '__main__':
-    setup()
+    setup_db()
     app.run(debug=True, host='0.0.0.0', port=8087, threaded=True)
