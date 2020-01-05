@@ -1,6 +1,6 @@
 import io
 
-from flask import Flask, request, redirect, Response, send_file
+from flask import Flask, request, redirect, Response, send_file, abort
 from werkzeug.datastructures import FileStorage
 import uuid
 import tarfile
@@ -25,14 +25,14 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 MODEL_TYPES = ["actor_target", "actor", "critic_target", "critic"]
 MODEL_CLASSES = ["city", "disease"]
 
-sql_create_table = """ CREATE TABLE IF NOT EXISTS models (
+sql_create_models_table = """ CREATE TABLE IF NOT EXISTS models (
                             model_class text,
                             model_type text,
                             id text,
                             model blob,
                             PRIMARY KEY(id, model_class, model_type)
                             );
-                    """
+                          """
 
 sql_create_ref_table = """ CREATE TABLE IF NOT EXISTS max_model (
                             model_class text,
@@ -40,18 +40,29 @@ sql_create_ref_table = """ CREATE TABLE IF NOT EXISTS max_model (
                             model blob,
                             PRIMARY KEY(model_class, model_type)
                             );
-                    """
+                       """
 
-sql_get_ref_models = """SELECT * FROM max_model;"""
+sql_create_settings_table = """ CREATE TABLE IF NOT EXISTS settings (
+                                 id INTEGER PRIMARY KEY CHECK (id = 0),
+                                 exploration float
+                                 );
+                            """
 
-sql_replace_model = """REPLACE INTO models VALUES (?,?,?,?);"""
+sql_set_exploration = """ REPLACE INTO settings VALUES ("id"=0,?);"""
+sql_get_exploration = """ SELECT exploration FROM settings WHERE "id"=0; """
+
+sql_get_ref_models = """ SELECT * FROM max_model; """
+
+sql_replace_model = """ REPLACE INTO models VALUES (?,?,?,?); """
 
 
 def setup_db():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    c.execute(sql_create_table)
+    c.execute(sql_create_models_table)
     c.execute(sql_create_ref_table)
+    c.execute(sql_create_settings_table)
+    c.execute(sql_set_exploration, [1])
     conn.commit()
     conn.close()
 
@@ -131,6 +142,34 @@ def return_id():
         return Response(str(uuid.uuid4()), mimetype="text/plain")
 
 
+@app.route('/get-exploration', methods=['GET'])
+def return_explo():
+    if request.method == 'GET':
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        explo = c.execute(sql_get_exploration).fetchone()[0]
+        conn.close()
+        return str(explo)
+
+
+@app.route('/set-exploration', methods=['GET', 'POST'])
+def set_explo():
+    if request.method == 'POST':
+        try:
+            req = request
+            rate_str = req.form["exploration_rate"]
+            new_explo_rate = float(rate_str)
+            conn = sqlite3.connect(DATABASE)
+            c = conn.cursor()
+            c.execute(sql_set_exploration, [new_explo_rate])
+            conn.commit()
+            conn.close()
+        except Exception:
+            # return internal server error
+            return abort(500)
+        return "Updated exploration rate successful."
+
+
 @app.route('/get-model', methods=['GET'])
 def return_model():
     if request.method == 'GET':
@@ -158,7 +197,6 @@ def return_model():
                          mimetype="application/tar",
                          as_attachment=True,
                          attachment_filename="models.tar")
-
 
 
 if __name__ == '__main__':
