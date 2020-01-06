@@ -88,8 +88,6 @@ def save_file(file: FileStorage, client_id: uuid.UUID) -> None:
     models = tarfile.open(fileobj=file.stream, mode="r")
 
     for model_info in models:
-        print(model_info.name)
-
         save_model(models.extractfile(model_info), model_info.name, client_id)
     return
 

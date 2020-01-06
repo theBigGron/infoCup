@@ -139,8 +139,8 @@ class TD3:
         if directory is not None:
             self.load_from_dir(agent_type, directory)
         else:
-            if os.path.exists(f'{MODEL_PATH}/max'):
-                self.load_from_dir(agent_type, "max")
+            if os.path.exists(f'{MODEL_PATH}'):
+                self.load_from_dir(agent_type, "")
             else:
                 print("path does not exist")
                 raise FileNotFoundError
@@ -161,11 +161,13 @@ class TD3:
         """
         load stored model for neural network from dir
         """
-        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_actor.pth.tar')
+        a = os.getcwd()
+        path = f"{directory}/{agent_type}_actor.pth.tar"
+        checkpoint = torch.load(f'{directory}/{agent_type}_actor.pth.tar')
         self.actor.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_actor_target.pth.tar')
+        checkpoint = torch.load(f'{directory}/{agent_type}_actor_target.pth.tar')
         self.actor_target.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_critic.pth.tar')
+        checkpoint = torch.load(f'{directory}/{agent_type}_critic.pth.tar')
         self.critic.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_critic_target.pth.tar')
+        checkpoint = torch.load(f'{directory}/{agent_type}_critic_target.pth.tar')
         self.critic_target.load_state_dict(checkpoint['state_dict'])

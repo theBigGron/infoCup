@@ -4,6 +4,7 @@
 """
 import argparse
 import io
+import gc
 import json
 import logging
 import logging.config
@@ -12,7 +13,7 @@ import random
 import tarfile
 import requests
 import torch
-
+from memory_profiler import profile
 from flask import Flask
 from flask import request
 from requests import post
@@ -55,6 +56,7 @@ iteration_counter = 0
 
 target_ip = startup_args.ip_out if startup_args.ip_out else "http://0.0.0.0:8087"
 
+print(f"Garbage collector running: {gc.isenabled()}")
 
 
 id = requests.get(url=f"{target_ip}/get-id").content
@@ -62,14 +64,19 @@ exploration_rate = float(requests
                          .get(url=f"{target_ip}/get-exploration")
                          .content
                          )
-ref_models_stream = requests.get(url=f"{target_ip}/get-model").content
 
-bin_ref_models = io.BytesIO(ref_models_stream)
-models = tarfile.open(fileobj=bin_ref_models, mode="r")
 
 # Loading agent
 agent: TorchAgent = TorchAgent()
-agent.load_bin(models)
+try:
+    ref_models_stream = requests.get(url=f"{target_ip}/get-model").content
+    bin_ref_models = io.BytesIO(ref_models_stream)
+    models = tarfile.open(fileobj=bin_ref_models, mode="r")
+    agent.load_bin(models)
+    print("remote model loaded")
+except Exception:
+    print("Remote model has not been loaded")
+    pass
 
 # Loading Logger
 csv_logger = startup_args.logging
@@ -80,6 +87,7 @@ game_json = None
 
 
 @app.route('/', methods=['GET', 'POST'])
+@profile
 def process_request():
     """This function provides the server for our project. Also main class.
     When we get the Game.json receive over 'POST' we get am instance of class state.
@@ -132,8 +140,9 @@ def process_request():
 
                 # Save all 10 iterations hours
                 iteration_counter += 1
+                gc.collect()
                 # TODO: ITERATIONEN!
-                if iteration_counter % 3 == 0:
+                if iteration_counter % 10 == 0:
                     logging.info("Saving Model")
                     tar = agent.get_models_as_tar_bin()
                     files = {'models': ("models.tar", tar, "multipart/form-data")}
@@ -143,8 +152,9 @@ def process_request():
                          )
                     logging.info("Model saved")
                     logging.warning(f"Exiting after: {iteration_counter} iterations")
-                if iteration_counter % 30 == 0:
-                    os._exit(1)
+                    os._exit(0)
+
+
 
             if csv_logger:
                 with open("log.csv", "a+") as f:

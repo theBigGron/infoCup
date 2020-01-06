@@ -21,3 +21,8 @@ Download von Models:
 ```bash
 curl localhost:8087/get-model --verbose
 ```
+
+Setting exploration rate:
+```bash
+curl localhost:8087/set-exploration --verbose
+```
