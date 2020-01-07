@@ -13,7 +13,7 @@ from ModelMerger import ModelMerger
     https://flask.palletsprojects.com/en/1.1.x/patterns/fileuploads/
 """
 
-DATABASE = "../models.db"
+DATABASE = "./models.db"
 ALLOWED_EXTENSIONS = {'pth', 'tar'}
 MODEL_TYPES = ["actor_target", "actor", "critic_target", "critic"]
 MODEL_CLASSES = ["city", "disease"]
