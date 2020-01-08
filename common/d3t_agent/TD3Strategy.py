@@ -3,12 +3,11 @@ import os
 
 import torch
 import torch.nn.functional as F
-from memory_profiler import profile
 
-from d3t_agent.Actor import Actor
+from common.d3t_agent.Actor import Actor
+from common.d3t_agent.Critic import Critic
 
-from d3t_agent.Critic import Critic
-from d3t_agent.ReplayMemory import ReplayBuffer
+from common.d3t_agent.ReplayMemory import ReplayBuffer
 
 # Selecting the device (CPU or GPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -37,7 +36,7 @@ class TD3:
         state = torch.Tensor(state.reshape(1, -1)).to(device)
         res = self.actor(state).cpu().data.numpy().flatten()
         return res
-    @profile
+
     def train(self, replay_buffer: ReplayBuffer, iterations, batch_size=10000, discount=0.99, tau=0.005, policy_freq=2):
 
         for it in range(iterations):
@@ -139,8 +138,8 @@ class TD3:
         if directory is not None:
             self.load_from_dir(agent_type, directory)
         else:
-            if os.path.exists(f'{MODEL_PATH}'):
-                self.load_from_dir(agent_type, "")
+            if os.path.exists(f'{MODEL_PATH}/max'):
+                self.load_from_dir(agent_type, "max")
             else:
                 print("path does not exist")
                 raise FileNotFoundError
@@ -161,13 +160,11 @@ class TD3:
         """
         load stored model for neural network from dir
         """
-        a = os.getcwd()
-        path = f"{directory}/{agent_type}_actor.pth.tar"
-        checkpoint = torch.load(f'{directory}/{agent_type}_actor.pth.tar')
+        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_actor.pth.tar')
         self.actor.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{directory}/{agent_type}_actor_target.pth.tar')
+        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_actor_target.pth.tar')
         self.actor_target.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{directory}/{agent_type}_critic.pth.tar')
+        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_critic.pth.tar')
         self.critic.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{directory}/{agent_type}_critic_target.pth.tar')
+        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_critic_target.pth.tar')
         self.critic_target.load_state_dict(checkpoint['state_dict'])

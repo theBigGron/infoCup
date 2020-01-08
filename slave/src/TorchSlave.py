@@ -13,13 +13,12 @@ import random
 import tarfile
 import requests
 import torch
-from memory_profiler import profile
 from flask import Flask
 from flask import request
 from requests import post
 
-from d3t_agent.TorchAgent import TorchAgent
-from data_processing.state_extractor import StateGenerator
+from common.d3t_agent.TorchAgent import TorchAgent
+from common.data_processing.state_extractor import StateGenerator
 
 app = Flask(__name__)  # pylint: disable=C0103
 
@@ -87,7 +86,6 @@ game_json = None
 
 
 @app.route('/', methods=['GET', 'POST'])
-@profile
 def process_request():
     """This function provides the server for our project. Also main class.
     When we get the Game.json receive over 'POST' we get am instance of class state.

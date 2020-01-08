@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 ./python/MasterServer.py
+python3 ./src/MasterServer.py

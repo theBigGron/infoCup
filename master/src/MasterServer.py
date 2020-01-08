@@ -6,7 +6,7 @@ import uuid
 from flask import Flask, request, redirect, Response, send_file, abort
 from werkzeug.datastructures import FileStorage
 
-from ModelMerger import ModelMerger
+from master.src.ModelMerger import ModelMerger
 
 """
     From

@@ -6,8 +6,8 @@ from copy import deepcopy
 from threading import Thread
 from time import sleep
 
-from Actor import Actor
-from Critic import Critic
+from common.d3t_agent.Actor import Actor
+from common.d3t_agent.Critic import Critic
 
 sql_select_models = """SELECT model FROM models WHERE model_class LIKE ? AND model_type LIKE ?;"""
 sql_replace_max_model = """REPLACE INTO max_model VALUES (?,?,?);"""
