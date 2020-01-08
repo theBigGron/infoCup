@@ -56,8 +56,7 @@ iteration_counter = 0
 target_ip = startup_args.ip_out if startup_args.ip_out else "http://0.0.0.0:8087"
 
 print(f"Garbage collector running: {gc.isenabled()}")
-
-
+print()
 id = requests.get(url=f"{target_ip}/get-id").content
 exploration_rate = float(requests
                          .get(url=f"{target_ip}/get-exploration")
@@ -140,7 +139,7 @@ def process_request():
                 iteration_counter += 1
                 gc.collect()
                 # TODO: ITERATIONEN!
-                if iteration_counter % 10 == 0:
+                if iteration_counter % 30 == 0:
                     logging.info("Saving Model")
                     tar = agent.get_models_as_tar_bin()
                     files = {'models': ("models.tar", tar, "multipart/form-data")}
@@ -186,4 +185,4 @@ def process_request():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=startup_args.port if startup_args.port else 50123, threaded=True)
+    app.run(host='localhost', port=startup_args.port if startup_args.port else 5000, threaded=True)

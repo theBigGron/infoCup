@@ -14,19 +14,15 @@ class Critic(nn.Module):
     def __init__(self, state_dim: int, action_dim: int):
         super(Critic, self).__init__()
         # Critic 1
-        self.layer_1 = nn.Linear(state_dim + action_dim, 200)
-        self.layer_2 = nn.Linear(200, 300)
-        self.layer_3 = nn.Linear(300, 100)
-        self.layer_4 = nn.Linear(100, 30)
-        self.layer_5 = nn.Linear(30, 50)
-        self.layer_6 = nn.Linear(50, 1)
+        self.layer_1 = nn.Linear(state_dim + action_dim, 10)
+        self.layer_2 = nn.Linear(10, 10)
+        self.layer_3 = nn.Linear(10, 10)
+        self.layer_4 = nn.Linear(10, 1)
         # Critic 2
-        self.layer_7 = nn.Linear(state_dim + action_dim, 200)
-        self.layer_8 = nn.Linear(200, 300)
-        self.layer_9 = nn.Linear(300, 100)
-        self.layer_10 = nn.Linear(100, 30)
-        self.layer_11 = nn.Linear(30, 50)
-        self.layer_12 = nn.Linear(50, 1)
+        self.layer_5 = nn.Linear(state_dim + action_dim, 10)
+        self.layer_6 = nn.Linear(10, 10)
+        self.layer_7 = nn.Linear(10, 10)
+        self.layer_8 = nn.Linear(10, 1)
 
     def forward(self, state: np.array, action: np.array):
         """ Returns 2 Q-Values from different critics.
@@ -40,16 +36,12 @@ class Critic(nn.Module):
         action_state_1 = F.relu(self.layer_1(action_state))
         action_state_1 = F.relu(self.layer_2(action_state_1))
         action_state_1 = F.relu(self.layer_3(action_state_1))
-        action_state_1 = F.relu(self.layer_4(action_state_1))
-        action_state_1 = F.relu(self.layer_5(action_state_1))
-        q_value_c1 = self.layer_6(action_state_1)
+        q_value_c1 = self.layer_4(action_state_1)
         # Critic 2
-        action_state_2 = F.relu(self.layer_7(action_state))
-        action_state_2 = F.relu(self.layer_8(action_state_2))
-        action_state_2 = F.relu(self.layer_9(action_state_2))
-        action_state_2 = F.relu(self.layer_10(action_state_2))
-        action_state_2 = F.relu(self.layer_11(action_state_2))
-        q_value_c2 = self.layer_12(action_state_2)
+        action_state_2 = F.relu(self.layer_5(action_state))
+        action_state_2 = F.relu(self.layer_6(action_state_2))
+        action_state_2 = F.relu(self.layer_7(action_state_2))
+        q_value_c2 = self.layer_8(action_state_2)
         # Return both Q-Values at once
         return q_value_c1, q_value_c2
 
@@ -65,7 +57,5 @@ class Critic(nn.Module):
         action_state_1 = F.relu(self.layer_1(action_state))
         action_state_1 = F.relu(self.layer_2(action_state_1))
         action_state_1 = F.relu(self.layer_3(action_state_1))
-        action_state_1 = F.relu(self.layer_4(action_state_1))
-        action_state_1 = F.relu(self.layer_5(action_state_1))
-        q_value = self.layer_6(action_state_1)
+        q_value = self.layer_4(action_state_1)
         return q_value

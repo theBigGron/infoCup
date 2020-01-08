@@ -28,9 +28,11 @@ class ModelMerger(Thread):
             successful_update = self.update()
             if successful_update:
                 # update each 30 min if models were merged
-                sleep(60 * 30)
+                print("Update successful")
+                sleep(60 * 20)
             else:
                 # try updating again after 2 min
+                print("Update not successful")
                 sleep(60 * 2)
 
     def update(self) -> bool:
@@ -39,28 +41,30 @@ class ModelMerger(Thread):
 
         :return: weather or not it was possible to merge models
         """
-        print("Updating models")
-        conn = sqlite3.connect(self.database, timeout=10)
-        c = conn.cursor()
-        conn.commit()
-        for class_name in self.model_classes:
-            for type_name in self.model_types:
-                c.execute(sql_select_models, (class_name, type_name))
-                models = c.fetchall()
-                if len(models) < 1:
-                    conn.rollback()
-                    print("Updating models failed.")
-                    return False
-                merged_model = self.merge(models, class_name, type_name)
-                buffer = io.BytesIO()
-                torch.save({'state_dict': merged_model.state_dict()}, buffer)
-                data = buffer.getvalue()
-                c.execute(sql_replace_max_model, (class_name, type_name, data))
-        conn.commit()
-        c.execute(sql_delete_models)
-        conn.close()
-        print("Updating models successful.")
-        return True
+        try:
+            print("Updating models")
+            conn = sqlite3.connect(self.database, timeout=10)
+            c = conn.cursor()
+            conn.commit()
+            for class_name in self.model_classes:
+                for type_name in self.model_types:
+                    c.execute(sql_select_models, (class_name, type_name))
+                    models = c.fetchall()
+                    if len(models) < 1:
+                        conn.rollback()
+                        return False
+                    merged_model = self.merge(models, class_name, type_name)
+                    buffer = io.BytesIO()
+                    torch.save({'state_dict': merged_model.state_dict()}, buffer)
+                    data = buffer.getvalue()
+                    c.execute(sql_replace_max_model, (class_name, type_name, data))
+            conn.commit()
+            c.execute(sql_delete_models)
+            conn.close()
+            return True
+        except Exception:
+            print("Error during updating")
+            raise Exception
 
     def get_model(self, model_type, input_size, output_size, max_size):
         if model_type == "actor" or model_type == "actor_target":
