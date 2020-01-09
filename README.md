@@ -1,5 +1,58 @@
 # InformatikCup2020
 
+##Overview
+Wir sind eine Gruppe aus vier Studenten der Universität Oldenburg, die am InformatiCup 2020 der Gesellschaft
+für Informatik (GI) teilnehmen. Die diesjährige Aufgabe bestand daraus die Menscheit vor dem Aussterben durch
+tödliche Krankheiten in einer Simulationsumgebung zu bewahren (Pandemie). Wir haben uns dazu entschieden
+unser Lösung auf Künstlicher Intelligenz aufzubauen.
+
+Die GI hat die Simulation als einen Webclient (ic20) zur Verfügung gestellt, der HTTP-GET Anfragen an einen zu
+implementierenden Webserver schickt. Wir haben den Webserver mit Flask in Python3 gebaut.
+
+Der slave-Webserver nimmt Anfragen des ic20 Webclients an und Trainiert das in commons spezifierte Modell.
+Nach einer gewissen Zeit werden die Modell an den master-Webserver geschickt, der diese annimmt
+(dafür muss commons Dateien auch im master zur Verfügung stehen) und in eine sqlite3 Datenbank schreibt.
+Nachdem das Modell traniert wurde, wird es durch das solution Package gesichert im Nicht-Trainingsmodus
+bereitgestellt.
+
+Die Anwendungen selber laufen mit den jeweilig richtigen Source Dateien in Docker Containern, dafür
+ist in jedem package ein eigenes Dockerfile spezifiert. Nachfolgend ist beschrieben wie man
+fürs Debugging die jeweiligen Anwendungen lokal (ohne docker) bauen kann.
+
+## Build Project
+### Manually
+0. Install python3 and python3-dev on Ubuntu with
+```sh
+sudo apt-get install python3 python3-dev
+```
+1. Install virtualenv globally with
+```sh
+sudo -H pip3 install virtualenv
+```
+2. Create an virtual environment and source it with:
+```sh
+virtualenv venv -p python3.6
+source venv/bin/activate
+```
+3. Install requirements with:
+```sh
+python3 -m pip install -r requirements.txt
+```
+
+### Freeze pip requirements
+In order to be able to install all required dependencies, freeze
+the pip3-dependencies to requirements.txt with
+```sh
+python3 -m pip freeze > requirements.txt
+```
+### With Docker [Deprecated]
+Run
+```sh
+docker image build -t informaticup:1.0 .
+```
+inside `informatiCup2020`-dir.
+
+
 ## Repository Description
 ```
 .
