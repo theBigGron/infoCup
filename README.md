@@ -1,4 +1,6 @@
-# Repository Description
+# InformatikCup2020
+
+## Repository Description
 ```
 .
 ├── common
@@ -40,16 +42,28 @@
 
 ```  
 
+## Deployment
 
-Im Ordner common findet sich der Code welcher von sowohl von dem Server
+Es gibt zwei Applikationen um die Modelle zu trainieren. Es gibt dabei unterschiedliche Docker Container die gestartet werden müssen. Es gibt einen Master, welcher zuerst gestartet werden muss. Der Master verwaltet die Modelle der Slave Modelle. Dann können die Slave Modelle gestartet werden.
+
+Im Ordner common findet sich der Code welcher von sowohl von dem Server,
 als auch von den Client-Applikationen verwendet wird.
-# Docker commands
+
+### Docker commands
+Starten des Master Containers.
+```
 docker run --restart=always -p 8087:8087 master:latest
-
+```
+Starten des slave Containers.
+```
 docker run -d --restart=always slave:latest
-
+```
+```
 docker cp 9c73f3c19580:/home/app/models.db .
-
+```
+```
 docker events
-
+```
+```
 docker update --restart=no my-container
+```
