@@ -67,3 +67,18 @@ docker events
 ```
 docker update --restart=no my-container
 ```
+
+## Create/Run Tests
+
+All tests has to remain in `tests/`-dir and has to follow
+the pattern `test_*.py`.
+Then you can run the tests with
+```sh
+python3 -m unittest discover -s tests
+```
+within project root dir `informaticup2020`.
+
+Alternatively you can add a PyCharm `Unittests`-configuration:
+1. choose `Unittests > Custom`
+2. Add `discover -s tests` to `Additional Arguments`
+3. Choose your project root dir as `Working directory`
