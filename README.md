@@ -1,4 +1,6 @@
-# Repository Description
+# InformatikCup2020
+
+## Repository Description
 ```
 .
 ├── common
@@ -40,16 +42,24 @@
 
 ```  
 
+## Deployment
 
 Im Ordner common findet sich der Code welcher von sowohl von dem Server
 als auch von den Client-Applikationen verwendet wird.
-# Docker commands
+
+### Docker commands
+```
 docker run --restart=always -p 8087:8087 master:latest
-
+```
+```
 docker run -d --restart=always slave:latest
-
+```
+```
 docker cp 9c73f3c19580:/home/app/models.db .
-
+```
+```
 docker events
-
+```
+```
 docker update --restart=no my-container
+```
