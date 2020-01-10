@@ -3,6 +3,7 @@ import os
 import tarfile
 from typing import List, Tuple
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -23,6 +24,15 @@ if not os.path.exists(MODEL_PATH):
 class TD3:
 
     def __init__(self, state_dim, action_dim, max_action):
+        """
+        Crates a twin delayed deep deterministic policy gradient actor.
+
+
+        :param state_dim: Number of data points the networks uses as input.
+        :param action_dim: Number of actions the nerwork can choose from.
+        :param max_action: Maximum activation possible for a datapoint. Used to
+                           clip activation after adding noise to state_dim data.
+        """
         # Loading actor and critic target
         self.actor = Actor(state_dim, action_dim, max_action).to(device)
         self.actor_target = Actor(state_dim, action_dim, max_action).to(device)
@@ -34,12 +44,36 @@ class TD3:
         self.max_action = max_action
         self.action_dim = action_dim
 
-    def select_action(self, state):
+    def select_action(self, state: np.array):
+        """ Calculates activation for given state.
+        Casts state into tensor.
+        Calculates activations from state_tensor.
+
+        :param state: Numpy representation of state.
+        :return: Neural network activations for action.
+        """
         state = torch.Tensor(state.reshape(1, -1)).to(device)
         res = self.actor(state).cpu().data.numpy().flatten()
         return res
 
-    def train(self, replay_buffer: ReplayBuffer, iterations, batch_size=10000, discount=0.99, tau=0.005, policy_freq=2):
+    def train(self,
+              replay_buffer: ReplayBuffer,
+              iterations: int,
+              batch_size: int = 10000,
+              discount: float = 0.99,
+              tau: float = 0.005,
+              policy_freq: int = 2):
+        """
+        Trains the neural network on given data. For multiple iterations.
+
+        :param replay_buffer: Buffer that holds all actions and their results plus rewards.
+        :param iterations: How many times we should train on the data.
+        :param batch_size: Batch size.
+        :param discount: Discount of future q Values.
+        :param tau: Discount factor for polyak averaging.
+        :param policy_freq: Number of steps taken before update ist performed.
+        :return:
+        """
 
         for it in range(iterations):
 
@@ -139,9 +173,12 @@ class TD3:
         return model_list
 
     # Making a load method to load a pre-trained model
-    def load(self, agent_type, directory=None):
+    def load(self, agent_type, directory=None) -> None:
         """
-        load stored model from neuronal Network
+        Load stored model weights from pth.tar files laying in given directory.
+        :param agent_type: Type of agent to load (City/Disease).
+        :param directory: Directory to load from.
+        :return: None
         """
         if directory is not None:
             self.load_from_dir(agent_type, directory)
@@ -152,7 +189,12 @@ class TD3:
                 print("path does not exist")
                 raise FileNotFoundError
 
-    def load_bin(self, models: list):
+    def load_bin(self, models: List[tarfile.TarFile]) -> None:
+        """
+        Loads all 4 models from a list of models.
+        :param models: List of models as tarFile loaded to a binary buffer.
+        :return: None
+        """
         for model in models:
             checkpoint = torch.load(model[0])["state_dict"]
             if "actor_target" in model[1]:
@@ -164,9 +206,12 @@ class TD3:
             elif "critic" in model[1]:
                 self.critic.load_state_dict(checkpoint)
 
-    def load_from_dir(self, agent_type, directory):
-        """
-        load stored model for neural network from dir
+    def load_from_dir(self, agent_type: str, directory: str) -> None:
+        """ Loads model from dir
+        Loads stored weights of given agent type from Directory.
+        :param agent_type: Type of agent to load. (City/Disease)
+        :param directory: Directory to load model from.
+        :return: None
         """
         checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_actor.pth.tar')
         self.actor.load_state_dict(checkpoint['state_dict'])
