@@ -16,7 +16,7 @@ Nachdem das Modell traniert wurde, wird es durch das solution Package gesichert 
 bereitgestellt.
 
 Die Anwendungen selber laufen mit den jeweilig richtigen Source Dateien in Docker Containern, dafür
-ist für jede Anwendung ein eigenes Dockerfile spezifiert. Nachfolgend ist beschrieben wie sie
+ist für jede Anwendung ein eigenes Dockerfile spezifiert. Nachfolgend ist beschrieben, wie Sie
 fürs Debugging auch lokal (ohne docker) ausgeführt werden können.
 
 ## Anleitungen
