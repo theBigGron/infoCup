@@ -10,7 +10,7 @@ import logging.config
 from flask import Flask
 from flask import request
 
-from common.d3t_agent import TorchAgent
+from common.d3t_agent.TorchAgent import TorchAgent
 from common.data_processing.state_extractor import StateGenerator
 
 app = Flask(__name__)  # pylint: disable=C0103

@@ -70,12 +70,6 @@ class ReplayBuffer:
             list_transitions = list_transitions[:-1]
             self.objects[object_] = list_transitions
 
-    def save_buffer(self):
-        """
-        Saves Buffer to DataBase
-        """
-        pass
-
     def flush(self):
         """
         Saves and clears Buffer

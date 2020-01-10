@@ -213,11 +213,11 @@ class TD3:
         :param directory: Directory to load model from.
         :return: None
         """
-        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_actor.pth.tar')
+        checkpoint = torch.load(f'{directory}/{agent_type}_actor.pth.tar')
         self.actor.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_actor_target.pth.tar')
+        checkpoint = torch.load(f'{directory}/{agent_type}_actor_target.pth.tar')
         self.actor_target.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_critic.pth.tar')
+        checkpoint = torch.load(f'{directory}/{agent_type}_critic.pth.tar')
         self.critic.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{MODEL_PATH}/{directory}/{agent_type}_critic_target.pth.tar')
+        checkpoint = torch.load(f'{directory}/{agent_type}_critic_target.pth.tar')
         self.critic_target.load_state_dict(checkpoint['state_dict'])
