@@ -22,7 +22,7 @@ fürs Debugging auch lokal (ohne docker) ausgeführt werden können.
 ## Anleitungen
 [Anleitungen für Master](master/README.md)<br/>
 [Anleitungen für Slave](slave/README.md)<br/>
-[Anleitungen für Solution](solution/README.md)
+[Anleitungen für Solution](solution/README.MD)
 
 ## Build Project
 ### Manually
