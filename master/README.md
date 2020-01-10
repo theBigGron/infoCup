@@ -21,7 +21,9 @@ curl  -F 'models=@/home/<USER>/Development/model_server/exampleModels/bag1.tar' 
 curl localhost:8087/get-model --verbose
 ```
 
-## Verändern der exploration rate (Werte zwischen 0 und 1, wobei 0 Greedy ist):
+## Verändern der exploration rate:
+(Werte zwischen 0 und 1, wobei 0 Greedy ist)
+
 ```bash
 curl localhost:8087/set-exploration --verbose
 ```
