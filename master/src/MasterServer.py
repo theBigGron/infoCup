@@ -6,6 +6,7 @@ import uuid
 from flask import Flask, request, redirect, Response, send_file, abort
 from werkzeug.datastructures import FileStorage
 
+from common.d3t_agent.TorchAgent import TorchAgent
 from master.src.ModelMerger import ModelMerger
 
 """
@@ -162,20 +163,7 @@ def return_model():
             models = c.fetchall()
             conn.commit()
             conn.close()
-            outer_tar_buffer = io.BytesIO()
-            tar = tarfile.TarFile(mode="w", fileobj=outer_tar_buffer)
-
-            for model in models:
-                model_class = model[0]
-                model_type = model[1]
-                model_bin = io.BytesIO(model[2])
-                info = tarfile.TarInfo(name=f"{model_class}_{model_type}.pth.tar")
-                info.size = len(model_bin.read())
-                model_bin.seek(0)
-                tar.addfile(tarinfo=info, fileobj=model_bin)
-            tar.close()
-
-            outer_tar_buffer.seek(0)
+            outer_tar_buffer = TorchAgent.merge_to_buffered_tar(models)
             return send_file(outer_tar_buffer,
                              mimetype="application/tar",
                              as_attachment=True,
