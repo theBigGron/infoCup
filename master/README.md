@@ -22,7 +22,7 @@ curl localhost:8087/get-model --verbose
 ```
 
 ## Verändern der exploration rate:
-(Werte zwischen 0 und 1, wobei 0 Greedy ist)
+Werte zwischen 0 und 1, wobei 0 Greedy ist.
 
 ```bash
 curl localhost:8087/set-exploration --verbose
