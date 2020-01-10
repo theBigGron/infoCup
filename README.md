@@ -103,3 +103,6 @@ Alternatively you can add a PyCharm `Unittests`-configuration:
 * Paul Gronau <Paul.Gronau@uni-oldenburg.de>
 * Torben Logemann <Torben.Logemann@uni-oldenburg.de>
 * Marcel Peplies <Marcel.Peplies@uni-oldenburg.de>
+
+# Dokumentation
+Für weitere Informationen siehe [Dokumentation](https://cloudstorage.uni-oldenburg.de/s/gHKaaBdBWogWLF7)
