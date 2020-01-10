@@ -275,7 +275,7 @@ class TorchAgent:
         model_list: list = self.city_agent.get_models("city") + self.disease_agent.get_models("disease")
         return model_list
 
-    def get_models_as_tar_bin(self) -> io.BytesIO[tarfile.TarFile]:
+    def get_models_as_tar_bin(self) -> io.BytesIO:
         """
         Collects all models and merges them in an outer tar file.
         Returns that tar File as binary buffer.
@@ -299,11 +299,18 @@ class TorchAgent:
         """
         Load weights for models from path.
         :param path: Path where the models are saved.
+        :return: None
         """
         self.city_agent.load("city", path)
         self.disease_agent.load("disease", path)
 
-    def load_bin(self, bin_models: io.BytesIO[tarfile.TarFile]):
+    def load_bin(self, bin_models: io.BytesIO) -> None:
+        """
+        Loads model weights form a tar file (binary form) into our models.
+
+        :param bin_models: Tar File containing model weights as io.BytesIO
+        :return: None
+        """
         city_models = []
         disease_models = []
         for model_info in bin_models:
