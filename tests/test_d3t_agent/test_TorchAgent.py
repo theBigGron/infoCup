@@ -329,6 +329,15 @@ class TorchAgentTest(unittest.TestCase):
                     iteration_counter = int(dic)
         return iteration_counter
 
+    """
+    To check whether the models are also loaded, models are first saved so that there is something to load.
+    First of all it is checked whether the folder "pytorch_models" contains the folder "max", in which the most recent 
+    models are located. If they are available, they are copied into the folder "help" for later comparison. Then the 
+    models are loaded and saved again directly afterwards. Since no training was running, the data should be the same. 
+    This is checked with the library filecmp.
+    If the folder "max" is not available, the folder with the highest iteration value is taken.
+    """
+
     def test_load_models(self):
         agent.save(self.get_hightest_model())
         if path.exists("pytorch_models/max"):
@@ -336,9 +345,17 @@ class TorchAgentTest(unittest.TestCase):
             agent.load()
             agent.save(self.get_hightest_model() + 1)
             test = filecmp.dircmp("pytorch_models/max", "pytorch_models/help")
+            test_wrong = filecmp.dircmp("pytorch_models/max", "pytorch_test_models")
             self.assertTrue(test.diff_files == [])
+            self.assertFalse(test_wrong.diff_files == [])
         else:
             copy_tree("pytorch_models/" + str(self.get_hightest_model()), "pytorch_models/help")
+            agent.load("pytorch_models/" + str(self.get_hightest_model()))
+            agent.save(self.get_hightest_model() + 1)
+            test = filecmp.dircmp("pytorch_models/" + str(self.get_hightest_model()), "pytorch_models/help")
+            test_wrong = filecmp.dircmp("pytorch_models/" + str(self.get_hightest_model()), "pytorch_test_models")
+            self.assertTrue(test.diff_files == [])
+            self.assertFalse(test_wrong.diff_files == [])
 
     """
     The act method from the TorchAgent, is used to have the network calculate any possible decisions for the cities and 
@@ -381,6 +398,13 @@ class TorchAgentTest(unittest.TestCase):
                 error = True
             previous = disease[1]
         self.assertFalse(error)
+
+    """
+    The method "get_city_action" returns a list. This list contains all possible actions for the cities that have been 
+    calculated by the network. These are sorted and should of course only contain actions for the cities that exist. 
+    Check by the GameJson, which reflects a shortened version of the Json from the ic20.
+    Checks for false, because the cities should be correct and a sorted list should be available.
+    """
 
     def test_get_city_action(self):
         cities = GameJson.cities
