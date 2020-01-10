@@ -41,7 +41,8 @@ function initMap() {
     $(document).ready(function () {
         refresh = function () {
             $.ajax({
-                url: "http://localhost:5000/get_game_json",
+                // Get the current host, e. i. "hostname:port" format to dynamically change get_game_json base url
+                url: "http://" + window.location.host + "/get_game_json",
                 dataType: "json",
                 async: true,
                 cache: false,
@@ -55,7 +56,7 @@ function initMap() {
                         printCities(data);
                         last_data = data;
                     }
-                        await sleep(2000);
+                    await sleep(2000);
                     refresh();
                 },
                 fail: function (jqxhr, textStatus, error) {
@@ -164,12 +165,12 @@ function rgbToHex(r, g, b) {
     return "#" + ((1 << 24) + (range_rgb(r) << 16) + (range_rgb(g) << 8) + range_rgb(b)).toString(16).slice(1);
 }
 
-function range_rgb(x){
-        if (x > 255) {
-            return 255;
-        }
-        if (x < 0) {
-            return 0;
-        }
-        return x;
+function range_rgb(x) {
+    if (x > 255) {
+        return 255;
+    }
+    if (x < 0) {
+        return 0;
+    }
+    return x;
 }
