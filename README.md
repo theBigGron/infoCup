@@ -1,6 +1,6 @@
 # InformatikCup2020
 
-##Overview
+## Overview
 Wir sind eine Gruppe aus vier Studenten der Universität Oldenburg, die am InformatiCup 2020 der Gesellschaft
 für Informatik (GI) teilnehmen. Die diesjährige Aufgabe bestand daraus die Menscheit vor dem Aussterben durch
 tödliche Krankheiten in einer Simulationsumgebung zu bewahren (Pandemie). Wir haben uns dazu entschieden
