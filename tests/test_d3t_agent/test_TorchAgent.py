@@ -309,10 +309,8 @@ class TorchAgentTest(unittest.TestCase):
         check_counter = 0
         if path.exists("pytorch_models"):
             iteration_counter = self.get_hightest_model()
-            agent.save(iteration_counter+1)
+            agent.save(iteration_counter + 1)
             check_counter = self.get_hightest_model()
-            print(iteration_counter)
-            print(check_counter)
             if iteration_counter < check_counter:
                 if os.path.getsize("pytorch_models/" + str(check_counter)) > 0:
                     saved = True
@@ -331,17 +329,33 @@ class TorchAgentTest(unittest.TestCase):
                     iteration_counter = int(dic)
         return iteration_counter
 
+    """
+    To check whether the models are also loaded, models are first saved so that there is something to load.
+    First of all it is checked whether the folder "pytorch_models" contains the folder "max", in which the most recent 
+    models are located. If they are available, they are copied into the folder "help" for later comparison. Then the 
+    models are loaded and saved again directly afterwards. Since no training was running, the data should be the same. 
+    This is checked with the library filecmp.
+    If the folder "max" is not available, the folder with the highest iteration value is taken.
+    """
+
     def test_load_models(self):
         agent.save(self.get_hightest_model())
         if path.exists("pytorch_models/max"):
-            print("max exists")
             copy_tree("pytorch_models/max", "pytorch_models/help")
             agent.load()
-            agent.save(self.get_hightest_model()+1)
+            agent.save(self.get_hightest_model() + 1)
             test = filecmp.dircmp("pytorch_models/max", "pytorch_models/help")
+            test_wrong = filecmp.dircmp("pytorch_models/max", "pytorch_test_models")
             self.assertTrue(test.diff_files == [])
+            self.assertFalse(test_wrong.diff_files == [])
         else:
             copy_tree("pytorch_models/" + str(self.get_hightest_model()), "pytorch_models/help")
+            agent.load("pytorch_models/" + str(self.get_hightest_model()))
+            agent.save(self.get_hightest_model() + 1)
+            test = filecmp.dircmp("pytorch_models/" + str(self.get_hightest_model()), "pytorch_models/help")
+            test_wrong = filecmp.dircmp("pytorch_models/" + str(self.get_hightest_model()), "pytorch_test_models")
+            self.assertTrue(test.diff_files == [])
+            self.assertFalse(test_wrong.diff_files == [])
 
     """
     The act method from the TorchAgent, is used to have the network calculate any possible decisions for the cities and 
@@ -371,23 +385,51 @@ class TorchAgentTest(unittest.TestCase):
     """
 
     def test_get_disease_action(self):
-        diseases = [{'id': 0, 'name': 'Endoictus', 'vaccine_available_or_in_development': 0,
-                     'medication_available_or_in_development': 0, 'duration': 0.75, 'lethality': 0,
-                     'infectivity': 0.25, 'mobility': 0.5, 'world_prevalence': 0.7503054634316635},
-                    {'id': 1, 'name': 'Moricillus ☠', 'vaccine_available_or_in_development': 0,
-                     'medication_available_or_in_development': 0, 'duration': 0.25, 'lethality': 0.75,
-                     'infectivity': 0.25, 'mobility': 0.5, 'world_prevalence': 0.00026182579856868566},
-                    {'id': 2, 'name': 'Admiral Trips', 'vaccine_available_or_in_development': 0,
-                     'medication_available_or_in_development': 1, 'duration': 0.25, 'lethality': 1, 'infectivity': 1,
-                     'mobility': 0.75, 'world_prevalence': 0.0}]
+        diseases = GameJson.diseases
         disease_names = ["Endoictus", "Moricillus ☠", "Admiral Trips"]
         result = agent.get_disease_actions(diseases, game_json['round'])
         error = False
+        previous = -1
         for disease in result:
             json_help = json.loads(disease[0])
             if json_help['pathogen'] not in disease_names:
                 error = True
+            if disease[1] < previous:
+                error = True
+            previous = disease[1]
         self.assertFalse(error)
+
+    """
+    The method "get_city_action" returns a list. This list contains all possible actions for the cities that have been 
+    calculated by the network. These are sorted and should of course only contain actions for the cities that exist. 
+    Check by the GameJson, which reflects a shortened version of the Json from the ic20.
+    Checks for false, because the cities should be correct and a sorted list should be available.
+    """
+
+    def test_get_city_action(self):
+        cities = GameJson.cities
+        diseases = GameJson.diseases
+        result_list = agent.get_city_actions(cities, diseases, game_json['round'])
+        error = False
+        previous = -1
+        for result in result_list:
+            to_json = json.loads(result[0])
+            if to_json['type'] != "endRound":
+                if to_json['city'] not in GameJson.city_names:
+                    error = True
+                if result[1] < previous:
+                    error = True
+                previous = result[1]
+        self.assertFalse(error)
+
+    # TODO: Need to implement
+
+    def test_train(self):
+        agent.train()
+
+    def test_update_reward(self):
+        reward = 100
+        agent.update_reward(reward)
 
 
 if __name__ == '__main__':
