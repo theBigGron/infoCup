@@ -1,24 +1,33 @@
 import unittest
 import json
+import pprint
 
 from common.data_processing.state_extractor import StateGenerator
-
+from tests.GameJson import game_json
+from tests.GameJson import game_json2
 
 class TestExtractor(unittest.TestCase):
     def setUp(self):
-        with open(file="test.json", mode='r', encoding='utf-8') as f:
-            data = json.load(f)
-            self.sg = StateGenerator(data)
+        # with open(file="GameJson2.py", mode='w', encoding='utf-8') as f:
+        #     pp = pprint.PrettyPrinter(indent=4, stream=f)
+        #     with open(file="test.json", mode='r', encoding='utf-8') as f:
+        #         data = json.load(f)
+        #         self.sg = StateGenerator(data)
+        #         pp.pprint(data)
+
+        self.sg1 = StateGenerator(game_json)
+        self.sg2 = StateGenerator(game_json2)
+
 
     def tearDown(self):
         pass
 
     def test_meta_data(self):
-        self.assertEqual(self.sg.round, 1)
-        self.assertEqual(self.sg.points, 40)
+        self.assertEqual(self.sg2.round, 1)
+        self.assertEqual(self.sg2.points, 40)
 
     def test_build_norm_disease_info_list(self):
-        self.sg.build_norm_disease_info_list()
+        self.sg2.build_norm_disease_info_list()
         disease_info_list_of_dicts = []
         disease_info_dict = {
             'id': 0,
@@ -44,10 +53,10 @@ class TestExtractor(unittest.TestCase):
             'world_prevalence': 0.0020452925878966803
         }
         disease_info_list_of_dicts.append(disease_info_dict)
-        self.assertEqual(self.sg.disease_info_list_of_dicts, disease_info_list_of_dicts)
+        self.assertEqual(self.sg2.disease_info_list_of_dicts, disease_info_list_of_dicts)
 
     def test_build_city_info_list(self):
-        self.sg.build_city_info_list()
+        self.sg2.build_city_info_list()
         city_info_dict = {
             'city_name': 'Abuja',
             # Norm the population in regard to former calculated world_population
@@ -66,10 +75,10 @@ class TestExtractor(unittest.TestCase):
             'anti-vaccinationism': 0
             # 'disease__prevalence':
         }
-        self.assertEqual(self.sg.city_info_list_of_dicts[0], city_info_dict)
+        self.assertEqual(self.sg2.city_info_list_of_dicts[0], city_info_dict)
 
     def test_world_population(self):
-        self.assertEqual(self.sg.world_population, 756371)
+        self.assertEqual(self.sg2.world_population, 756371)
     # def test_empty_post_req(self):
     #    response = self.app.post("", follow_redirects=True)
     #    self.assertEqual(response.status, "200 OK")
@@ -81,6 +90,21 @@ class TestExtractor(unittest.TestCase):
     #        response = self.app.post("/", data=json.dumps(data), follow_redirects=True, content_type='application/json')
     #        self.assertEqual(response.status, "200 OK")
     #        self.assertEqual(response.json, {"type": "endRound"})
+
+    def test_is_available_or_in_development_for_disease(self):
+        self.sg1.build_norm_disease_info_list()
+        disease_info_dict = {
+            'duration': 0.25,
+            'id': 2,
+            'infectivity': 1,
+            'lethality': 1,
+            'medication_available_or_in_development': 0.625,
+            'mobility': 0.75,
+            'name': 'Admiral Trips',
+            'vaccine_available_or_in_development': 0,
+            'world_prevalence': 0.0
+        }
+        self.assertEqual(self.sg1.disease_info_list_of_dicts[2], disease_info_dict)
 
 
 if __name__ == '__main__':
