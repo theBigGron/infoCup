@@ -45,7 +45,7 @@ class TD3:
         self.action_dim = action_dim
 
     def select_action(self, state: np.array):
-        """ Calculates activation for given state.
+        """
         Casts state into tensor.
         Calculates activations from state_tensor.
 
@@ -138,8 +138,13 @@ class TD3:
     # Making a save method to save a trained model
     def save(self, agent_type, dir_):
         """
+        Save model of given type.
+
         Save actual model from neuronal Network in with iretation counter
         also overrides current newest model.
+
+        :param: Type of Agent: Disease or City
+        :return: None
         """
         for directory in ["max", dir_]:
             if not os.path.exists(f'{MODEL_PATH}/{directory}'):
@@ -159,6 +164,7 @@ class TD3:
     def get_models(self, agent_type: str) -> List[Tuple[str, str, bytes]]:
         """
         Retrieves pth.tar representation for all models of specified agent type.
+
         :param agent_type: disease or city
         :return: list containing a tuple of agent_type, agent_name, pth.tar as binary
                  (City, _agent_target,City_agent_target.pth.tar as binary)

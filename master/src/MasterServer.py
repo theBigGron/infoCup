@@ -51,6 +51,11 @@ app = Flask(__name__)
 
 
 def setup_db() -> None:
+    """
+    Creates sqliteDB and base models.
+
+    :return: None
+    """
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
     c.execute(sql_create_models_table)
@@ -62,14 +67,28 @@ def setup_db() -> None:
 
 
 def allowed_file(filename: str) -> bool:
+    """
+    Checks if the file type is an acceptable filetype.
+
+    :param filename: Name of file.
+    :return: Weather or not we allow acceptance of that file.
+    """
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def save_model(model: tarfile, model_info: tarfile.TarInfo, client_id: uuid.UUID) -> None:
-    for type in MODEL_TYPES:
-        if type in model_info:
-            model_type = type
+    """
+    Saves file in database.
+
+    :param model: Tarfile containing a model.
+    :param model_info: TarInfo regarding the model.
+    :param client_id: Id from where the model came. Overwrites model in database.
+    :return: None
+    """
+    for type_ in MODEL_TYPES:
+        if type_ in model_info:
+            model_type = type_
             break
 
     for class_ in MODEL_CLASSES:
@@ -86,6 +105,13 @@ def save_model(model: tarfile, model_info: tarfile.TarInfo, client_id: uuid.UUID
 
 
 def save_file(file: FileStorage, client_id: uuid.UUID) -> None:
+    """
+    Saves the data from buffer.
+
+    :param file: Buffer saving data recieved.
+    :param client_id: Unique ID to indentify source.
+    :return: None
+    """
     models = tarfile.open(fileobj=file.stream, mode="r")
 
     for model_info in models:
@@ -94,7 +120,11 @@ def save_file(file: FileStorage, client_id: uuid.UUID) -> None:
 
 
 @app.route('/models', methods=['GET', 'POST'])
-def upload_file():
+def upload_file() -> str:
+    """
+    Used to recieve newly trained models.
+    :return: Response message to be send to client by flask.
+    """
     if request.method == 'POST':
         # check if the post request has the file part
         if 'models' not in request.files:
@@ -121,12 +151,25 @@ def upload_file():
 
 @app.route('/get-id', methods=['GET'])
 def return_id():
+    """
+    Generates a random id.
+
+    Is used later to overwrite models recieved from the same client.
+
+    :return: UNIQUE id as string.
+    """
     if request.method == 'GET':
         return Response(str(uuid.uuid4()), mimetype="text/plain")
 
 
 @app.route('/get-exploration', methods=['GET'])
 def return_explo():
+    """
+    Returns an exploration rate between 0 and 1.
+
+    Used by slave to update their exploration rate.
+    :return: Exploration rate between 0 and 1
+    """
     if request.method == 'GET':
         conn = sqlite3.connect(DATABASE)
         c = conn.cursor()
@@ -137,6 +180,10 @@ def return_explo():
 
 @app.route('/set-exploration', methods=['GET', 'POST'])
 def set_explo():
+    """
+    Used to update the exploration rate. Used by scientists.
+    :return: Success message if successful.
+    """
     if request.method == 'POST':
         try:
             req = request
@@ -155,6 +202,11 @@ def set_explo():
 
 @app.route('/get-model', methods=['GET'])
 def return_model():
+    """
+    Returns current reference model for the slaves to improve.
+
+    :return: TarFile Containing multiple models.
+    """
     if request.method == 'GET':
         try:
             conn = sqlite3.connect(DATABASE)

@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 class Actor(nn.Module):
     """
-    Actor for Neuronal Network. Define layer with number of neurons in constructor.
+    Neuronal Network. Define layer with number of neurons in constructor.
     """
     def __init__(self, state_dim, action_dim, max_action):
         super(Actor, self).__init__()

@@ -1,8 +1,15 @@
 import io
 import tarfile
+from typing import List, Tuple
 
 
-def merge_to_buffered_tar(buffers):
+def merge_models_tar_to_buffered_tar(buffers: List[Tuple[str, str, bytes]]) -> io.BytesIO:
+    """
+    Merges a list of model (e.g. city_actor_target.pth.tar) tar buffers to one tar file in memory.
+
+    :param buffers: List of (model_class, model_types, tar buffer)
+    :return: TarFile with multiple models. buffered
+    """
     outer_tar_buffer = io.BytesIO()
     tar = tarfile.TarFile(mode="w", fileobj=outer_tar_buffer)
     for model in buffers:

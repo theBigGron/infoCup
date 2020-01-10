@@ -6,6 +6,8 @@ from copy import deepcopy
 from threading import Thread
 from time import sleep
 
+from torch import nn
+
 from common.d3t_agent.Actor import Actor
 from common.d3t_agent.Critic import Critic
 
@@ -16,6 +18,9 @@ sql_delete_models = """DELETE FROM models;"""
 
 
 class ModelMerger(Thread):
+    """
+    Merges all recieved models to one single reference model.
+    """
 
     def __init__(self, database, model_classes, model_types):
         Thread.__init__(self)
@@ -24,6 +29,11 @@ class ModelMerger(Thread):
         self.model_types = model_types
 
     def run(self) -> None:
+        """
+        Run method for multi threading.
+        Updates the models all 20 minutes if update was successful. Otherwise updates all 2 Minutes.
+        :return: None
+        """
         while True:
             successful_update = self.update()
             if successful_update:
@@ -66,14 +76,32 @@ class ModelMerger(Thread):
             print("Error during updating")
             raise Exception
 
-    def get_model(self, model_type, input_size, output_size, max_size):
+    def get_model(self, model_type: str, input_size: int, output_size: int, max_activation: float) -> nn.Module:
+        """
+        Creates a neural network of given type.
+
+        :param model_type: Network type .
+        :param input_size: Input size of NN.
+        :param output_size: Output size of NN.
+        :param max_activation: Maximum activation of NN.
+        :return: Neural network.
+        """
         if model_type == "actor" or model_type == "actor_target":
-            model = Actor(input_size, output_size, max_size)
+            model = Actor(input_size, output_size, max_activation)
         else:
             model = Critic(input_size, output_size)
         return model
 
-    def merge_models(self, model_list: list, model_type, input_size, output_size, max_size):
+    def merge_models(self, model_list: list, model_type: str, input_size: int, output_size: int, max_activation: float):
+        """
+        Merges multiple model weights into one.
+
+        :param model_list: List of multiple models.
+        :param model_type: Type of recieved models.
+        :param output_size: Output size of NN.
+        :param max_activation: Maximum activation of NN.
+        :return: Neural network.
+        """
         beta = 1 / len(model_list)  # The interpolation parameter
         params = model_list[0].named_parameters()
         dict_params = deepcopy(dict(params))
@@ -88,17 +116,35 @@ class ModelMerger(Thread):
                     dict_params[name1].data += beta * param1.data
 
         # Creating and loading model
-        model = self.get_model(model_type, input_size, output_size, max_size)
+        model = self.get_model(model_type, input_size, output_size, max_activation)
         model.load_state_dict(dict_params)
         return model
 
-    def load_model(self, pth: bytearray, model_type, input_size: int, output_size: int, max_size: int):
-        model = self.get_model(model_type, input_size, output_size, max_size)
+    def load_model(self, pth: bytearray, model_type, input_size: int, output_size: int, max_activation: int):
+        """
+        Loads model weights from bytearray.
+
+        :param pth: Bytearray containing a *.pth.tar file.
+        :param model_type: Network type .
+        :param input_size: Input size of NN.
+        :param output_size: Output size of NN.
+        :param max_activation: Maximum activation of NN.
+        :return: Neural network.
+        """
+        model = self.get_model(model_type, input_size, output_size, max_activation)
         checkpoint = torch.load(io.BytesIO(pth[0]))["state_dict"]
         model.load_state_dict(checkpoint)
         return model
 
     def merge(self, models_bin: list, model_class: str, model_type) -> list:
+        """
+        Updates merge parameters for the models.
+
+        :param models_bin: List of bytearrays containing *.pth.tar files.
+        :param model_class: Class of model to load.
+        :param model_type: Type of model to load.
+        :return: List with merged models.
+        """
         if model_class == "city":
             input_size, output_size, max_size = 10, 9, 1
         elif model_class == "disease":

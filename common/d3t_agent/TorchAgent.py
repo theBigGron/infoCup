@@ -7,7 +7,7 @@ from typing import List, Union, Tuple
 
 from common.d3t_agent.ReplayMemory import ReplayBuffer
 from common.d3t_agent.TD3Strategy import TD3
-from common.data_processing.tar_buffer import merge_to_buffered_tar
+from common.data_processing.tar_buffer import merge_models_tar_to_buffered_tar
 from common.data_processing.state_actions import CityActions, DiseaseActions
 from common.data_processing.state_extractor import dis_dict_to_np, StateGenerator, merge_city_disease
 
@@ -281,7 +281,7 @@ class TorchAgent:
         Returns that tar File as binary buffer.
         :return: TarFile as BytesIO.
         """
-        outer_tar_buffer = merge_to_buffered_tar(self.get_models())
+        outer_tar_buffer = merge_models_tar_to_buffered_tar(self.get_models())
         return outer_tar_buffer
 
     def save(self, iteration_counter: int):

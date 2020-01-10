@@ -11,6 +11,11 @@ SYM_VALUE_NORM_NUMBER_DICT = {
 class StateGenerator:
 
     def __init__(self, game_json):
+        """
+        Parses game state into a more concise format for faster access to needed information.
+
+        :param game_json: ic20 json representing the current game state.
+        """
         self.game_json = game_json
         self.round = game_json["round"]
         self.points = game_json["points"]
@@ -23,7 +28,6 @@ class StateGenerator:
         self.world_population = 0
         self.calculate_world_population()
         self.build_city_info_list()
-        #self.build_norm_global_info()
         self.build_norm_disease_info_list()
         self.response_list_cities = {"quarantine", "airportClosed", "connectionClosed", "vaccineInDeployment",
                                      "medicationInDeployment", "influenceExerted", "electionsCalled",
@@ -271,7 +275,13 @@ class StateGenerator:
         return self.game_json["error"]
 
 
-def city_dict_to_np_arr(elem):
+def city_dict_to_np_arr(elem: dict) -> np.ndarray:
+    """
+    Parses our city dict into a numpy array representation
+    .
+    :param elem: City dict
+    :return: Array representing the city info state.
+    """
     elem_value_list = [
         elem['population'],
         elem['amount_connections'],
@@ -286,6 +296,12 @@ def city_dict_to_np_arr(elem):
 
 
 def dis_dict_to_np(elem):
+    """
+    Parses our city dict into a numpy array representation
+    .
+    :param elem: City dict
+    :return: Array representing the city info state.
+    """
     elem_value_list = [
         elem['vaccine_available_or_in_development'],
         elem['medication_available_or_in_development'],
@@ -298,13 +314,26 @@ def dis_dict_to_np(elem):
     return np.array(elem_value_list)
 
 
-def merge_city_disease(city, disease):
+def merge_city_disease(city: dict, disease: dict) -> np.ndarray:
+    """
+    Takes the actions for a city and combines them with the disease actions for that city.
+
+    :param city: Dict of city actions and their activations.
+    :param disease: Dict of disease actions and their activations.
+    :return: Concatenated numpy array of actions.
+    """
     city = city_dict_to_np_arr(city)
-    disease = city_disease_info(disease)
+    disease = city_disease_info_to_np(disease)
     return np.concatenate((city, disease,), axis=None)
 
 
-def city_disease_info(disease):
+def city_disease_info_to_np(disease: dict):
+    """
+    Parses a disease information of a city from dict into a numpy array.
+
+    :param disease: disease information of a city
+    :return: Numpy array with world prevalence of disease and the diseases threat.
+    """
     elem_value_list = [
         disease['world_prevalence'],
         disease_threat(disease)
@@ -312,8 +341,15 @@ def city_disease_info(disease):
     return np.array(elem_value_list)
 
 
-def disease_threat(disease):
-    sum = disease['world_prevalence'] * \
+def disease_threat(disease: dict):
+    """
+    Calculates the threat of a disease to the world population.
+
+    :param disease: Disease dict.
+    :return: Threat generated to the world.
+    """
+
+    threat = disease['world_prevalence'] * \
           (
                   (disease['duration']
                    + disease['lethality']
@@ -321,4 +357,4 @@ def disease_threat(disease):
                    + disease['mobility'])
                   / 4
           )
-    return sum
+    return threat

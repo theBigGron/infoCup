@@ -7,7 +7,9 @@ import numpy as np
 # noinspection DuplicatedCode
 class Critic(nn.Module):
 
-    """ Evaluates action, state combination
+    """
+    Evaluates action, state combination
+
     Evaluates the action and state combination for better predictions.
     """
 
@@ -25,7 +27,8 @@ class Critic(nn.Module):
         self.layer_8 = nn.Linear(10, 1)
 
     def forward(self, state: np.array, action: np.array):
-        """ Returns 2 Q-Values from different critics.
+        """
+        Returns 2 Q-Values from different critics.
 
         :param state: Current State
         :param action: Current Actions
@@ -46,8 +49,11 @@ class Critic(nn.Module):
         return q_value_c1, q_value_c2
 
     def calc_q1(self, state: np.array, action: np.array) -> np.array:
-        """ Returns Q-Values from first critic.
+        """
+        Returns Q-Values from first critic.
+
         This is used for gradient descent for updating the weights of the actor model.
+
         :param state: Current State
         :param action: Current Actions
         :return:

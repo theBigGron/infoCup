@@ -9,7 +9,6 @@ import logging
 class ReplayBuffer:
     """
     Replay buffer for training.
-    If training from DB it is advised to load multiple games before training.
     """
 
     def __init__(self):
@@ -24,6 +23,7 @@ class ReplayBuffer:
             state_new: Any = None,
             reward: Any = None):
         """
+        Adds a transition to the replay buffer.
 
         :param state_old: numpy array of state (nn input)
         :param action: resulting action
@@ -39,8 +39,13 @@ class ReplayBuffer:
 
     def sample(self, batch_size: int) -> Tuple[ndarray, ndarray, ndarray, Any]:
         """
-        Returns random samples
+        Returns random transition samples.
+
+        Returns random transition samples from the memory buffer.
         Collecting random samples from replay buffer to avoid learning information that depends on predecessors.
+
+        :param batch_size: Size of batches.
+        :return: List of [old_state, new_state, action, reward]
         """
         if not self.storage:
             logging.debug("Empty Replay Buffer")
@@ -67,11 +72,12 @@ class ReplayBuffer:
                np.array(batch_rewards).reshape(-1, 1)
 
     def update_reward(self, reward: float) -> None:
-        """ update reward
+        """
+        Update reward.
         Sorts all entries in the replay memory by round.
         Updates the reward for each entry in the memory.
 
-        :param reward: Reward for selecting the actions in record.
+        :param reward: Reward for selecting the actions currently buffered.
         :return: None  np.array,
         """
         for object_ in self.objects.keys():
@@ -86,7 +92,7 @@ class ReplayBuffer:
 
     def flush(self):
         """
-        Saves and clears Buffer
+        Saves and clears Buffer.
         """
         self.storage = []
         self.objects = dict()
