@@ -1,4 +1,8 @@
+import json
+from typing import Tuple, Any
+
 import numpy as np
+from numpy import ndarray
 import logging
 
 
@@ -12,7 +16,13 @@ class ReplayBuffer:
         self.storage = []
         self.objects = dict()
 
-    def add(self, state_old, action, object_name, round_, state_new=None, reward=None):
+    def add(self,
+            state_old: ndarray,
+            action: dict,
+            object_name: str,
+            round_: int,
+            state_new: Any = None,
+            reward: Any = None):
         """
 
         :param state_old: numpy array of state (nn input)
@@ -27,7 +37,7 @@ class ReplayBuffer:
             self.objects[object_name] = []
         self.objects[object_name].append([state_old, state_new, action, reward, round_])
 
-    def sample(self, batch_size):
+    def sample(self, batch_size: int) -> Tuple[ndarray, ndarray, ndarray, Any]:
         """
         Returns random samples
         Collecting random samples from replay buffer to avoid learning information that depends on predecessors.
@@ -56,9 +66,13 @@ class ReplayBuffer:
         return np.array(batch_states_old), np.array(batch_states_new), np.array(batch_actions), \
                np.array(batch_rewards).reshape(-1, 1)
 
-    def update_reward(self, reward):
-        """
-        update reward
+    def update_reward(self, reward: float) -> None:
+        """ update reward
+        Sorts all entries in the replay memory by round.
+        Updates the reward for each entry in the memory.
+
+        :param reward: Reward for selecting the actions in record.
+        :return: None  np.array,
         """
         for object_ in self.objects.keys():
             list_transitions = self.objects[object_]
