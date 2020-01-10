@@ -18,7 +18,7 @@ Diese Dateien werden von der Abgabe inkludiert und enthalten die Daten um das Ne
 curl  -F 'models=@/home/pag/Development/model_server/exampleModels/bag1.tar' localhost:8087/models --verbose -H "Authorization: Basic 11843e47-3e1b-45ba-9d09-2d154bb9a73l"
 ```
 
-Download der Modelle:
+Herunterladen der Modelle:
 ```bash
 curl localhost:8087/get-model --verbose
 ```
