@@ -19,6 +19,11 @@ Die Anwendungen selber laufen mit den jeweilig richtigen Source Dateien in Docke
 ist für jede Anwendung ein eigenes Dockerfile spezifiert. Nachfolgend ist beschrieben wie sie
 fürs Debugging auch lokal (ohne docker) ausgeführt werden können.
 
+## Anleitungen
+[Anleitungen für Master](master/README.md)<br/>
+[Anleitungen für Slave](slave/README.md)<br/>
+[Anleitungen für Solution](solution/README.md)
+
 ## Build Project
 ### Manually
 0. Install python3 and python3-dev on Ubuntu with
@@ -51,49 +56,6 @@ Run
 docker image build -t informaticup:1.0 .
 ```
 inside `informatiCup2020`-dir.
-
-
-## Repository Description
-```
-.
-├── common
-│   ├── d3t_agent
-│   ├── data_processing
-│   ├── __init__.py
-│   ├── __pycache__
-│   └── requirements.txt
-├── master
-│   ├── __init__.py
-│   ├── MasterServer.py
-│   ├── ModelMerger.py
-│   ├── models.db
-│   ├── __pycache__
-│   ├── README.md
-│   └── start.sh
-├── slave
-│   ├── ic20_linux
-│   ├── __pycache__
-│   ├── README.md
-│   ├── src
-│   └── start.sh
-├── solution
-│   ├── ic20_linux
-│   ├── README.MD
-│   ├── requirements.txt
-│   └── TorchMain.py
-├── venv
-│   ├── bin
-│   ├── include
-│   └── lib
-├── zcripts
-│   ├── docker_scripts.MD
-│   └── get_models.md
-├── README.md
-├── zMaster.Dockerfile
-├── zSlave.Dockerfile
-└── zSolution.Dockerfile
-
-```  
 
 ## Deployment
 
