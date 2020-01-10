@@ -13,7 +13,7 @@
 8. ```disease_critic_target.pth.tar```
 
 ```bash
-curl  -F 'models=@/home/pag/Development/model_server/exampleModels/bag1.tar' localhost:8087/models --verbose -H "Authorization: Basic 11843e47-3e1b-45ba-9d09-2d154bb9a73l"
+curl  -F 'models=@/home/<USER>/Development/model_server/exampleModels/bag1.tar' localhost:8087/models --verbose -H "Authorization: Basic 11843e47-3e1b-45ba-9d09-2d154bb9a73l"
 ```
 
 ## Herunterladen der Modelle:
