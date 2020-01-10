@@ -16,8 +16,13 @@ Nachdem das Modell traniert wurde, wird es durch das solution Package gesichert 
 bereitgestellt.
 
 Die Anwendungen selber laufen mit den jeweilig richtigen Source Dateien in Docker Containern, dafür
-ist für jede Anwendung ein eigenes Dockerfile spezifiert. Nachfolgend ist beschrieben wie sie
+ist für jede Anwendung ein eigenes Dockerfile spezifiert. Nachfolgend ist beschrieben, wie Sie
 fürs Debugging auch lokal (ohne docker) ausgeführt werden können.
+
+## Anleitungen
+[Anleitungen für Master](master/README.md)<br/>
+[Anleitungen für Slave](slave/README.md)<br/>
+[Anleitungen für Solution](solution/README.MD)
 
 ## Build Project
 ### Manually
@@ -51,49 +56,6 @@ Run
 docker image build -t informaticup:1.0 .
 ```
 inside `informatiCup2020`-dir.
-
-
-## Repository Description
-```
-.
-├── common
-│   ├── d3t_agent
-│   ├── data_processing
-│   ├── __init__.py
-│   ├── __pycache__
-│   └── requirements.txt
-├── master
-│   ├── __init__.py
-│   ├── MasterServer.py
-│   ├── ModelMerger.py
-│   ├── models.db
-│   ├── __pycache__
-│   ├── README.md
-│   └── start.sh
-├── slave
-│   ├── ic20_linux
-│   ├── __pycache__
-│   ├── README.md
-│   ├── src
-│   └── start.sh
-├── solution
-│   ├── ic20_linux
-│   ├── README.MD
-│   ├── requirements.txt
-│   └── TorchMain.py
-├── venv
-│   ├── bin
-│   ├── include
-│   └── lib
-├── zcripts
-│   ├── docker_scripts.MD
-│   └── get_models.md
-├── README.md
-├── zMaster.Dockerfile
-├── zSlave.Dockerfile
-└── zSolution.Dockerfile
-
-```  
 
 ## Deployment
 
@@ -135,3 +97,12 @@ Alternatively you can add a PyCharm `Unittests`-configuration:
 1. choose `Unittests > Custom`
 2. Add `discover -s tests` to `Additional Arguments`
 3. Choose your project root dir as `Working directory`
+
+## Über uns
+* Markus Gersdorf <Markus.Gersdorf@uni-oldenburg.de>
+* Paul Gronau <Paul.Gronau@uni-oldenburg.de>
+* Torben Logemann <Torben.Logemann@uni-oldenburg.de>
+* Marcel Peplies <Marcel.Peplies@uni-oldenburg.de>
+
+# Dokumentation
+Für weitere Informationen siehe [Dokumentation](https://cloudstorage.uni-oldenburg.de/s/gHKaaBdBWogWLF7)
