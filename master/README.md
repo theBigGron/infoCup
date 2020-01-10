@@ -12,20 +12,18 @@ Hochladen von Modellen:
 7. disease_critic.pth.tar
 8. disease_critic_target.pth.tar
 
-Diese Dateien werden von der Abgabe inkludiert und enthalten die Daten um das Neuronale Netz zu initialisieren mit gelernten Werten.
+Diese Dateien werden von der Abgabe inkludiert und enthalten die Daten um das Neuronale Netz mit gelernten Werten zu initialisieren.
 
 ```bash
 curl  -F 'models=@/home/pag/Development/model_server/exampleModels/bag1.tar' localhost:8087/models --verbose -H "Authorization: Basic 11843e47-3e1b-45ba-9d09-2d154bb9a73l"
 ```
 
-
-
-Download von Models:
+Download der Modelle:
 ```bash
 curl localhost:8087/get-model --verbose
 ```
 
-Setting exploration rate:
+Verändern der exploration rate (Werte zwischen 0 und 1, wobei 0 Greedy ist):
 ```bash
 curl localhost:8087/set-exploration --verbose
 ```
