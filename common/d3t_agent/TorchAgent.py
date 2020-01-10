@@ -1,17 +1,27 @@
 import io
+import json
 import os
 import logging
 import tarfile
+from typing import List, Union, Tuple
 
 from common.d3t_agent.ReplayMemory import ReplayBuffer
 from common.d3t_agent.TD3Strategy import TD3
+from common.data_processing.tar_buffer import merge_to_buffered_tar
 from common.data_processing.state_actions import CityActions, DiseaseActions
 from common.data_processing.state_extractor import dis_dict_to_np, StateGenerator, merge_city_disease
+
+
+
 
 
 class TorchAgent:
 
     def __init__(self):
+        """
+        The TorchAgentClass holds a AI strategy for handling diseases and cities with their responding actions.
+        It also saves game states and chosen actions for training after a game finished.
+        """
 
         self.disease_agent = TD3(state_dim=7, action_dim=2, max_action=1)
         self.disease_replay_memory: ReplayBuffer = ReplayBuffer()
@@ -26,7 +36,13 @@ class TorchAgent:
         except FileNotFoundError as ex:
             logging.info(" No pretrained models availlable")
 
-    def act(self, state: StateGenerator):
+    def act(self, state: StateGenerator) -> List[Union[DiseaseActions, CityActions]]:
+        """
+        Get all possible actions for current game state.
+
+        :param state: Current game state.
+        :return: List of all possible actions. Ordered by their activation.
+        """
         result_list = []  # list of tuple (json_response, activation)
 
         # Calculate best disease action
@@ -42,14 +58,17 @@ class TorchAgent:
         result_list.sort(key=lambda k: k[1], reverse=True)
         return result_list
 
-    def get_disease_actions(self, diseases, round_: int):
+    def get_disease_actions(self, diseases: dict, round_: int) -> List[DiseaseActions]:
         """
-        Calculates most urgent action for diseases
+        Calculates most urgent action for diseases.
+        Saves current state and actions for each possible action to replay buffer.
+
+        :return result_list: List of all possible actions with their corresponding activation. Sorted by activation.
         """
         result_list = []
         for disease in diseases:
             disease_np = dis_dict_to_np(disease)
-            action = self.disease_agent.select_action(disease_np)  # Hier findet die Berechnung im Netz statt
+            action = self.disease_agent.select_action(disease_np)
             self.disease_replay_memory.add(disease_np,
                                            action=action,
                                            object_name=disease["name"],
@@ -59,9 +78,12 @@ class TorchAgent:
         result_list.sort(key=lambda k: k[1])
         return result_list
 
-    def get_city_actions(self, cities, diseases, round_: int):
+    def get_city_actions(self, cities, diseases, round_: int) -> List[CityActions]:
         """
-        Calculates most urgent action for cities
+        Calculates most urgent action for cities.
+        Saves current state and actions for each possible action to replay buffer.
+
+        :return result_list: List of all possible actions with their corresponding activation. Sorted by activation.
         """
         result_list = []
 
@@ -80,18 +102,32 @@ class TorchAgent:
         result_list.sort(key=lambda k: k[1])
         return result_list
 
-    def train(self):
+    def train(self) -> None:
+        """
+        Trains the agent on actions chosen during this game with regards to the reward by the game outcome.
+        """
         self.city_agent.train(self.city_replay_memory, iterations=3)
         self.disease_agent.train(self.disease_replay_memory, iterations=3)
         self.city_replay_memory.flush()
         self.disease_replay_memory.flush()
 
-    def update_reward(self, reward):
+    def update_reward(self, reward: float) -> None:
+        """
+        Updates entries in the replay buffer on the reward.
+        :param reward: Quality of chosen decision.
+        """
         self.city_replay_memory.update_reward(reward)
         self.disease_replay_memory.update_reward(reward)
 
     # Return True wenn fehlerhaft
-    def check_response(self, response_, game_json):
+    def check_response(self, response_: json, game_json: json) -> bool:
+        """
+        Checks if the given move is a possible move.
+
+        :param response_: Possible action to choose from.
+        :param game_json: Current game state
+        :return: Weather or not this move is a possible move.
+        """
         if int(self.get_points(response_)) > game_json['points']:
             return True
         if response_['type'] == 'putUnderQuarantine':
@@ -128,22 +164,36 @@ class TorchAgent:
         if response_['type'] == 'launchCampaign':
             return self.find_event_in_city(game_json, response_['city'], 'campaignLaunched')
 
-    # Return true, if the event was found
-    def find_global_pathogen(self, game_json, pathogen_name, typ):
+    # TODO: Remove?
+    def find_global_pathogen(self, game_json: json, pathogen_name: str, event_type: str) -> bool:
+        """
+        Searches if a pathogen exists in game.
+
+        :param game_json: Current game state.
+        :param pathogen_name: Name of the pathogen that gets searched for.
+        :param event_type: Name of the event type that gets searched for.
+        :return: Weather or not the specified pathogen exists during current game state.
+        """
         for event in game_json['events']:
-            if event['type'] == typ:
+            if event['type'] == event_type:
                 if event['pathogen']['name'] == pathogen_name:
-                    # Event gefunden
                     return True
-        # Kein Event von dem Typ
         return False
 
-    def find_event_in_city(self, game_json, city, typ):
-        for city_name, city_obj in game_json['cities'].items():
+    def find_event_in_city(self, game_json, city, event_type) -> bool:
+        """
+        Searches if an event exists in a certain city.
+
+        :param game_json: Current game state.
+        :param city: City that we expect to contain an event.
+        :param event_type: Type of event that we are looking for.
+        :return:  False if city does not contain the event. False if the city neither exists nor contains the event.
+        """
+        for _, city_obj in game_json['cities'].items():
             if city_obj['name'] == city:
                 if 'events' in city_obj:
                     for event in city_obj['events']:
-                        if event['type'] == typ:
+                        if event['type'] == event_type:
                             # Wenn das Event existiert
                             return True
                 # Wenn das Event nicht existiert
@@ -151,7 +201,13 @@ class TorchAgent:
         # Wenn Stadt nicht gefunden wird
         return True
 
-    def get_points(self, response_):
+    def get_points(self, response_: json) -> int:
+        """
+        Retrieves the costs for an actions.
+
+        :param response_: Action.
+        :return: Points to spend.
+        """
         points = dict()
         points['endRound'] = 0
         if 'rounds' in response_.keys():
@@ -169,20 +225,37 @@ class TorchAgent:
 
         return points[response_['type']]
 
-    def find_develop(self, game_json, pathogen_name, typ):
+    def find_develop(self, game_json: json, pathogen_name: str, aid_type: str):
+        """
+        Looks if a medication or vaccine has been developed already.
+        :param game_json: Current game state.
+        :param pathogen_name: Name of the pathogen we would like to develop aid for.
+        :param aid_type: Type of aid we would like to develop (Vaccione or Medication).
+        :return: True if medication is in development.
+        """
+        # TODO: elif part not necessary.
         for event in game_json["events"]:
-            if event['type'] == typ + 'InDevelopment':
+            if event['type'] == aid_type + 'InDevelopment':
                 if event['pathogen']['name'] == pathogen_name:
                     return True
-            elif event['type'] == typ + 'Available':
+            elif event['type'] == aid_type + 'Available':
                 if event['pathogen']['name'] == pathogen_name:
                     return False
         # Not developed
         return False
 
-    def find_deployment(self, game_json, pathogen_name, city, typ):
+    # TODO: Is this method functioning?
+    def find_deployment(self, game_json: json, pathogen_name: str, city: str, aid_type: str):
+        """
+        Looks if medicine has already been deployed in given city.
+        :param game_json: Current state of the game.
+        :param pathogen_name: Name of the pathogen.
+        :param city: Name of the city.
+        :param aid_type: Type of aid.
+        :return: True if aid has been deployed.
+        """
         for event in game_json["events"]:
-            if event['type'] == typ + 'Available':
+            if event['type'] == aid_type + 'Available':
                 if event['pathogen']['name'] == pathogen_name:
                     for city_name, city_obj in game_json['cities'].items():
                         if city_obj['name'] == city:
@@ -193,41 +266,51 @@ class TorchAgent:
                                             return False
         return True
 
-    def get_models(self) -> list:
+    def get_models(self) -> List[Tuple[str, str, bytes]]:
         """
+        Retrieves models for both types of agents.
 
-        :return:
+        :return: List of all models trained by this agent.
         """
         model_list: list = self.city_agent.get_models("city") + self.disease_agent.get_models("disease")
         return model_list
 
-    def get_models_as_tar_bin(self) -> tarfile.TarFile:
-        models = self.get_models()
-        outer_tar_buffer = io.BytesIO()
-        tar = tarfile.TarFile(mode="w", fileobj=outer_tar_buffer)
-
-        for model in models:
-            model_class = model[0]
-            model_type = model[1]
-            model_bin = io.BytesIO(model[2])
-            info = tarfile.TarInfo(name=f"{model_class}_{model_type}.pth.tar")
-            info.size = len(model_bin.read())
-            model_bin.seek(0)
-            tar.addfile(tarinfo=info, fileobj=model_bin)
-        tar.close()
-        outer_tar_buffer.seek(0)
+    def get_models_as_tar_bin(self) -> io.BytesIO:
+        """
+        Collects all models and merges them in an outer tar file.
+        Returns that tar File as binary buffer.
+        :return: TarFile as BytesIO.
+        """
+        outer_tar_buffer = merge_to_buffered_tar(self.get_models())
         return outer_tar_buffer
 
     def save(self, iteration_counter: int):
+        """
+        Saves current models to pth file.
+
+        :param iteration_counter: Iterations the model trained for.
+        :return: Model weights saved in pth file.
+        """
         iteration_counter = str(iteration_counter)
         self.city_agent.save("city", iteration_counter)
         self.disease_agent.save("disease", iteration_counter)
 
-    def load(self, path=None):
+    def load(self, path: str = None) -> None:
+        """
+        Load weights for models from path.
+        :param path: Path where the models are saved.
+        :return: None
+        """
         self.city_agent.load("city", path)
         self.disease_agent.load("disease", path)
 
-    def load_bin(self, bin_models):
+    def load_bin(self, bin_models: io.BytesIO) -> None:
+        """
+        Loads model weights form a tar file (binary form) into our models.
+
+        :param bin_models: Tar File containing model weights as io.BytesIO
+        :return: None
+        """
         city_models = []
         disease_models = []
         for model_info in bin_models:

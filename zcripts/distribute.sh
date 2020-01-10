@@ -13,9 +13,9 @@ do
   /snap/bin/docker system prune -a ;\
   rm -r slave.tar ;\
   rm -r .cache/pip/;\
-  /snap/bin/docker run -d pgronau/infocup:slave;\
-  /snap/bin/docker run -d pgronau/infocup:slave;\
-  /snap/bin/docker run -d pgronau/infocup:slave;\
-  /snap/bin/docker run -d pgronau/infocup:slave;\
+  /snap/bin/docker run -d pgronau/infocup:slave; \
+  /snap/bin/docker run -d pgronau/infocup:slave; \
+  /snap/bin/docker run -d pgronau/infocup:slave; \
+  /snap/bin/docker run -d pgronau/infocup:slave; \
   "
 done
