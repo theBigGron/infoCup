@@ -1,5 +1,5 @@
 import numpy as np
-from memory_profiler import profile
+
 MAX_ROUNDS = 200  # replace mit logarithmus
 MAX_AMOUNT_OF_CONNECTIONS = 20
 MAX_POINTS = 100

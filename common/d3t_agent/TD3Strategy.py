@@ -1,5 +1,7 @@
 import io
 import os
+import tarfile
+from typing import List, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -120,7 +122,13 @@ class TD3:
             critic_target_path = f'{MODEL_PATH}/{directory}/{agent_type}_critic_target.pth.tar'
             torch.save({'state_dict': self.critic_target.state_dict()}, critic_target_path)
 
-    def get_models(self, agent_type):
+    def get_models(self, agent_type: str) -> List[Tuple[str, str, bytes]]:
+        """
+        Retrieves pth.tar representation for all models of specified agent type.
+        :param agent_type: disease or city
+        :return: list containing a tuple of agent_type, agent_name, pth.tar as binary
+                 (City, _agent_target,City_agent_target.pth.tar as binary)
+        """
         model_list = []
         types_ = ["actor", "actor_target", "critic", "critic_target"]
         for ctr, model in enumerate([self.actor, self.actor_target, self.critic, self.critic_target]):

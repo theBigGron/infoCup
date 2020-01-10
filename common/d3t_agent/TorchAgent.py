@@ -100,12 +100,12 @@ class TorchAgent:
             else:
                 return True
         if response_['type'] == 'closeAirport':
-            if [response_['rounds']] > 0:
+            if response_['rounds'] > 0:
                 return self.find_event_in_city(game_json, response_['city'], 'airportClosed')
             else:
                 return True
         if response_['type'] == 'closeConnection':
-            if [response_['rounds']] > 0:
+            if response_['rounds'] > 0:
                 return self.find_event_in_city(game_json, response_['city'], 'connectionClosed')
             else:
                 return True
@@ -128,14 +128,13 @@ class TorchAgent:
         if response_['type'] == 'launchCampaign':
             return self.find_event_in_city(game_json, response_['city'], 'campaignLaunched')
 
-    def find_global_event(self, game_json, pathogen_name, typ):
+    # Return true, if the event was found
+    def find_global_pathogen(self, game_json, pathogen_name, typ):
         for event in game_json['events']:
             if event['type'] == typ:
                 if event['pathogen']['name'] == pathogen_name:
                     # Event gefunden
                     return True
-                # Event hat diesen Typ, aber für eine andere Krankheit
-                return False
         # Kein Event von dem Typ
         return False
 
@@ -195,6 +194,10 @@ class TorchAgent:
         return True
 
     def get_models(self) -> list:
+        """
+
+        :return:
+        """
         model_list: list = self.city_agent.get_models("city") + self.disease_agent.get_models("disease")
         return model_list
 
@@ -214,9 +217,6 @@ class TorchAgent:
         tar.close()
         outer_tar_buffer.seek(0)
         return outer_tar_buffer
-
-
-
 
     def save(self, iteration_counter: int):
         iteration_counter = str(iteration_counter)
