@@ -1,2 +1,2 @@
-# Master
-Hier werden Informationen zum Master gesammelt!
+# Solution
+Hier werden Informationen zur Solution gesammelt!
