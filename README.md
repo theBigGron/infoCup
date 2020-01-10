@@ -97,3 +97,9 @@ Alternatively you can add a PyCharm `Unittests`-configuration:
 1. choose `Unittests > Custom`
 2. Add `discover -s tests` to `Additional Arguments`
 3. Choose your project root dir as `Working directory`
+
+## Über uns
+* Markus Gersdorf <Markus.Gersdorf@uni-oldenburg.de>
+* Paul Gronau <Paul.Gronau@uni-oldenburg.de>
+* Torben Logemann <Torben.Logemann@uni-oldenburg.de>
+* Marcel Peplies <Marcel.Peplies@uni-oldenburg.de>
