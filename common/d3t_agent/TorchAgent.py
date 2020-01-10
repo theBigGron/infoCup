@@ -194,6 +194,10 @@ class TorchAgent:
         return True
 
     def get_models(self) -> list:
+        """
+
+        :return:
+        """
         model_list: list = self.city_agent.get_models("city") + self.disease_agent.get_models("disease")
         return model_list
 

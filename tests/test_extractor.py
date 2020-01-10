@@ -1,7 +1,7 @@
 import unittest
 import json
 
-from data_processing.state_extractor import StateGenerator
+from common.data_processing.state_extractor import StateGenerator
 
 
 class TestExtractor(unittest.TestCase):
