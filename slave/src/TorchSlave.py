@@ -13,14 +13,20 @@ import random
 import tarfile
 import requests
 import torch
-from flask import Flask
-from flask import request
+import time
+from flask import (Flask, Blueprint, flash, g, redirect, render_template, request, session, url_for)
 from requests import post
+from flask_cors import CORS
 
 from common.d3t_agent.TorchAgent import TorchAgent
 from common.data_processing.state_extractor import StateGenerator
+from common.vis.Visualization import Visualization
 
 app = Flask(__name__)  # pylint: disable=C0103
+CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+bp = Blueprint('map', __name__, url_prefix='/map')
 
 # Disable flask default logging
 log = logging.getLogger('werkzeug')
@@ -63,7 +69,6 @@ exploration_rate = float(requests
                          .content
                          )
 
-
 # Loading agent
 agent: TorchAgent = TorchAgent()
 try:
@@ -93,7 +98,7 @@ def process_request():
     Deterministic tells if the agent should always take the greedy function, or explore further.
     Training tells if the agent should learn after playing a game.
     """
-    global agent, training, iteration_counter, exploration_rate, game_counter  # pylint: disable=C0103, global-statement
+    global agent, training, visuals, iteration_counter, exploration_rate, game_counter  # pylint: disable=C0103, global-statement
 
     logging.basicConfig(filename='example.log', level=logging.DEBUG)
 
@@ -103,7 +108,12 @@ def process_request():
 
     if game.method == 'POST':
 
-        state = StateGenerator(request.json)
+        state = StateGenerator(game.json)
+        if visuals:
+            global game_json
+            game_json = game.json
+            time.sleep(2)
+            #Visualization(game.json)
         rounds = game.json["round"]
 
         if state.move_done() or "error" in game.json.keys():
@@ -151,8 +161,6 @@ def process_request():
                     logging.warning(f"Exiting after: {iteration_counter} iterations")
                     os._exit(0)
 
-
-
             if csv_logger:
                 with open("log.csv", "a+") as f:
                     f.write(f"{iteration_counter},{game.json['outcome']},{rounds},{reward}\n")
@@ -184,5 +192,16 @@ def process_request():
             return "end"
 
 
+@app.route('/get_game_json', methods=['GET'])
+def get_game_json():
+    return json.dumps(game_json)
+
+
+@app.route('/map', methods=['GET'])
+def get_map():
+    return render_template('map.html')
+
+
 if __name__ == '__main__':
+    app.register_blueprint(bp)
     app.run(host='localhost', port=startup_args.port if startup_args.port else 5000, threaded=True)
