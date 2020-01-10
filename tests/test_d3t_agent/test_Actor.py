@@ -2,6 +2,9 @@ import unittest
 
 from common.d3t_agent.Actor import Actor
 
+"""
+This class contains the tests for the class Actor.
+"""
 
 class ActorTest(unittest.TestCase):
     """

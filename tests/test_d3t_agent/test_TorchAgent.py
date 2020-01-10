@@ -3,9 +3,6 @@ import unittest
 import os.path
 import json
 from distutils.dir_util import copy_tree
-
-import numpy as np
-
 from common.d3t_agent.TorchAgent import TorchAgent
 from common.data_processing.state_extractor import StateGenerator
 from tests import GameJson
@@ -22,6 +19,8 @@ For example: test_not_enough_points
 
 If you need a game json, there is a class "GameJson.py" where you can find a shorter version of the original jame json 
 from the ic_20 tool.
+
+This class contains the tests for the class Actor.
 """
 
 

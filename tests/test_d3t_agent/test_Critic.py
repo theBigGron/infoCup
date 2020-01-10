@@ -2,6 +2,10 @@ import unittest
 
 from common.d3t_agent.Critic import Critic
 
+"""
+This class contains the tests for the class Critic.
+"""
+
 
 class CriticTest(unittest.TestCase):
     """
