@@ -1,12 +1,13 @@
 import unittest
 import json
 
-from common.data_processing.state_extractor import StateGenerator
+from common.data_processing.state_extractor import StateGenerator, eval_disease_prevalence
+from tests.data_for_tests import GameJson
 
 
 class TestExtractor(unittest.TestCase):
     def setUp(self):
-        with open(file="test.json", mode='r', encoding='utf-8') as f:
+        with open(file="data_for_tests/test.json", mode='r', encoding='utf-8') as f:
             data = json.load(f)
             self.sg = StateGenerator(data)
 
@@ -14,8 +15,8 @@ class TestExtractor(unittest.TestCase):
         pass
 
     def test_meta_data(self):
-        self.assertEqual(self.sg.round, 1)
-        self.assertEqual(self.sg.points, 40)
+        self.assertEqual(1, self.sg.round)
+        self.assertEqual(40, self.sg.points)
 
     def test_build_norm_disease_info_list(self):
         self.sg.build_norm_disease_info_list()
@@ -44,7 +45,7 @@ class TestExtractor(unittest.TestCase):
             'world_prevalence': 0.0020452925878966803
         }
         disease_info_list_of_dicts.append(disease_info_dict)
-        self.assertEqual(self.sg.disease_info_list_of_dicts, disease_info_list_of_dicts)
+        self.assertEqual(disease_info_list_of_dicts, self.sg.disease_info_list_of_dicts)
 
     def test_build_city_info_list(self):
         self.sg.build_city_info_list()
@@ -57,6 +58,7 @@ class TestExtractor(unittest.TestCase):
             # This calculates the sum of the populations of the connected cities
             # and norms it by dividing with world_population
             'connected_city_population':0.014492887749530323,
+            'disease__prevalence': {},
             # These statements grab the value with given key from SYM_VALUE_NORM_NUMBER_DICT in order to
             # map --, ..., ++ to 0, ..., 1
             'economy': 0.5,
@@ -66,10 +68,10 @@ class TestExtractor(unittest.TestCase):
             'anti-vaccinationism': 0
             # 'disease__prevalence':
         }
-        self.assertEqual(self.sg.city_info_list_of_dicts[0], city_info_dict)
+        self.assertEqual(city_info_dict, self.sg.city_info_list_of_dicts[0])
 
     def test_world_population(self):
-        self.assertEqual(self.sg.world_population, 756371)
+        self.assertEqual(756371, self.sg.world_population)
     # def test_empty_post_req(self):
     #    response = self.app.post("", follow_redirects=True)
     #    self.assertEqual(response.status, "200 OK")
@@ -81,6 +83,12 @@ class TestExtractor(unittest.TestCase):
     #        response = self.app.post("/", data=json.dumps(data), follow_redirects=True, content_type='application/json')
     #        self.assertEqual(response.status, "200 OK")
     #        self.assertEqual(response.json, {"type": "endRound"})
+
+    def test_eval_disease_prevalence(self):
+        data = GameJson.city_obj[0]
+        diseases_with_prevalence = eval_disease_prevalence(data)
+        self.assertTrue(diseases_with_prevalence["Geranitis"] == 0.6)
+        self.assertTrue(diseases_with_prevalence["Neurodermantotitis"] == 0.1)
 
 
 if __name__ == '__main__':

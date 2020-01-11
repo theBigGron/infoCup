@@ -1,10 +1,10 @@
 #!/bin/bash
 echo "Starting Server"
-python3 ./src/TorchSlave.py -p 5000 -ip http://accum.informatik.uni-oldenburg.de:11001 > /dev/null &
-sleep 5
+python3 ./src/TorchSlave.py -ip http://accum.informatik.uni-oldenburg.de:11001 > /dev/null &
 echo "Starting sim"
-for i in {1..30};
+sleep 5
+for i in {1..29};
 do
   echo "Starting Run $i"
-  ./ic20_linux -u http://localhost:5000
+  ./ic20_linux
 done

@@ -5,7 +5,7 @@ import json
 from distutils.dir_util import copy_tree
 from common.d3t_agent.TorchAgent import TorchAgent
 from common.data_processing.state_extractor import StateGenerator
-from tests import GameJson
+from tests.data_for_tests import GameJson
 from os import path
 
 game_json = GameJson.game_json
@@ -408,7 +408,7 @@ class TorchAgentTest(unittest.TestCase):
     def test_get_city_action(self):
         cities = GameJson.cities
         diseases = GameJson.diseases
-        result_list = agent.get_city_actions(cities, diseases, game_json['round'])
+        result_list = agent.get_actions(cities, diseases, game_json['round'])
         error = False
         previous = -1
         for result in result_list:

@@ -44,7 +44,7 @@ class ReplayBuffer:
         Returns random transition samples from the memory buffer.
         Collecting random samples from replay buffer to avoid learning information that depends on predecessors.
 
-        :param batch_size: Size of batches.
+        :param batch_size: Size of batch.
         :return: List of [old_state, new_state, action, reward]
         """
         if not self.storage:
@@ -55,7 +55,7 @@ class ReplayBuffer:
         else:
             logging.debug("Buffer Filled")
 
-        if batch_size == "all":
+        if batch_size == "all" or batch_size >= len(self.storage):
             batch_size = len(self.storage)
 
         random_indexes = np.random.randint(0, len(self.storage), size=batch_size)

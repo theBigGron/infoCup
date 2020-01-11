@@ -12,7 +12,6 @@ import os
 import random
 import tarfile
 import requests
-import torch
 from flask import Flask
 from flask import request
 from requests import post
@@ -55,14 +54,11 @@ iteration_counter = 0
 
 target_ip = startup_args.ip_out if startup_args.ip_out else "http://0.0.0.0:8087"
 
-print(f"Garbage collector running: {gc.isenabled()}")
-print()
-id = requests.get(url=f"{target_ip}/get-id").content
+id_ = requests.get(url=f"{target_ip}/get-id").content
 exploration_rate = float(requests
                          .get(url=f"{target_ip}/get-exploration")
                          .content
                          )
-
 
 # Loading agent
 agent: TorchAgent = TorchAgent()
@@ -78,11 +74,10 @@ except Exception:
 
 # Loading Logger
 csv_logger = startup_args.logging
-cuda = ("cuda" if torch.cuda.is_available() else "cpu")
-
+#cuda = ("cuda" if torch.cuda.is_available() else "cpu")
+cuda = 'cpu'
 game_counter = 0
 game_json = None
-
 
 @app.route('/', methods=['GET', 'POST'])
 def process_request():
@@ -145,7 +140,7 @@ def process_request():
                     files = {'models': ("models.tar", tar, "multipart/form-data")}
                     post(url=f"{target_ip}/models",
                          files=files,
-                         headers={"Authorization": f"Basic {id}", }
+                         headers={"Authorization": f"Basic {id_}", }
                          )
                     logging.info("Model saved")
                     logging.warning(f"Exiting after: {iteration_counter} iterations")
@@ -163,21 +158,22 @@ def process_request():
                 if exploration_rate <= 0:
                     while agent.check_response(json.loads(response_[choice_counter][0]), game.json):
                         choice_counter += 1
+                    print(response_[choice_counter])
                     return response_[choice_counter][0]
 
                 else:
                     if random.random() < exploration_rate:
                         choice = random.choice(response_)
                         choice_json = json.loads(choice[0])
-                        choice_json["rounds"] = 2
                         while agent.check_response(json.loads(choice[0]), game.json):
                             choice = random.choice(response_)
                             choice_json = json.loads(choice[0])
-                            choice_json["rounds"] = 2
+                        print(response_[choice_counter])
                         return choice_json
                     else:
                         while agent.check_response(json.loads(response_[choice_counter][0]), game.json):
                             choice_counter += 1
+                        print(response_[choice_counter])
                         return response_[choice_counter][0]
         else:
             logging.info("====================")
@@ -185,4 +181,4 @@ def process_request():
 
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=startup_args.port if startup_args.port else 5000, threaded=True)
+    app.run(host='localhost', port=startup_args.port if startup_args.port else 50123, threaded=True)

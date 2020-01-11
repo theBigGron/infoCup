@@ -3,16 +3,16 @@ import json
 import os
 import logging
 import tarfile
-from typing import List, Union, Tuple
+from typing import List, Tuple
 
 from common.d3t_agent.ReplayMemory import ReplayBuffer
 from common.d3t_agent.TD3Strategy import TD3
+from common.data_processing import state_actions
 from common.data_processing.tar_buffer import merge_models_tar_to_buffered_tar
-from common.data_processing.state_actions import CityActions, DiseaseActions
-from common.data_processing.state_extractor import dis_dict_to_np, StateGenerator, merge_city_disease
+from common.data_processing.state_actions import Actions
+from common.data_processing.state_extractor import StateGenerator, merge_city_disease
 
-
-
+INPUT_SIZE = 16
 
 
 class TorchAgent:
@@ -23,11 +23,9 @@ class TorchAgent:
         It also saves game states and chosen actions for training after a game finished.
         """
 
-        self.disease_agent = TD3(state_dim=7, action_dim=2, max_action=1)
-        self.disease_replay_memory: ReplayBuffer = ReplayBuffer()
-
-        self.city_agent = TD3(state_dim=10, action_dim=9, max_action=1)
-        self.city_replay_memory: ReplayBuffer = ReplayBuffer()
+        self.agent = TD3(state_dim=INPUT_SIZE,
+                         action_dim=state_actions.get_number_of_actions())
+        self.replay_memory: ReplayBuffer = ReplayBuffer()
         try:
             logging.info("======== PyTorchModel =========")
             if os.path.exists("models"):
@@ -36,7 +34,7 @@ class TorchAgent:
         except FileNotFoundError as ex:
             logging.info(" No pretrained models availlable")
 
-    def act(self, state: StateGenerator) -> List[Union[DiseaseActions, CityActions]]:
+    def act(self, state: StateGenerator) -> List[Actions]:
         """
         Get all possible actions for current game state.
 
@@ -48,37 +46,14 @@ class TorchAgent:
         # Calculate best disease action
         diseases = state.disease_info_list_of_dicts
         round_ = state.round
-        result_list += self.get_disease_actions(diseases, round_)
 
         # Calculate best City action
         cities = state.city_info_list_of_dicts
-        result_list += self.get_city_actions(cities, diseases, round_)
+        result_list += self.get_actions(cities, diseases, round_)
 
-        # Evaluates all actions
-        result_list.sort(key=lambda k: k[1], reverse=True)
         return result_list
 
-    def get_disease_actions(self, diseases: dict, round_: int) -> List[DiseaseActions]:
-        """
-        Calculates most urgent action for diseases.
-        Saves current state and actions for each possible action to replay buffer.
-
-        :return result_list: List of all possible actions with their corresponding activation. Sorted by activation.
-        """
-        result_list = []
-        for disease in diseases:
-            disease_np = dis_dict_to_np(disease)
-            action = self.disease_agent.select_action(disease_np)
-            self.disease_replay_memory.add(disease_np,
-                                           action=action,
-                                           object_name=disease["name"],
-                                           round_=round_)
-            disease_action_list = DiseaseActions(disease["name"], action).action_list
-            result_list += disease_action_list
-        result_list.sort(key=lambda k: k[1])
-        return result_list
-
-    def get_city_actions(self, cities, diseases, round_: int) -> List[CityActions]:
+    def get_actions(self, cities: dict, diseases: dict, round_: int) -> List[Actions]:
         """
         Calculates most urgent action for cities.
         Saves current state and actions for each possible action to replay buffer.
@@ -91,33 +66,30 @@ class TorchAgent:
 
             for disease in diseases:
                 city_with_disease = merge_city_disease(city, disease)
-                action = self.city_agent.select_action(city_with_disease)
-                self.city_replay_memory.add(city_with_disease,
-                                            action=action,
-                                            object_name=disease["name"] + city['city_name'],
-                                            round_=round_)
-                city_action_list = CityActions(city, disease, action).action_list
+                action = self.agent.select_action(city_with_disease)
+                self.replay_memory.add(city_with_disease,
+                                       action=action,
+                                       object_name=disease["name"] + city['city_name'],
+                                       round_=round_)
+                city_action_list = Actions(city["city_name"], disease["name"], action).action_list
                 result_list += city_action_list
 
-        result_list.sort(key=lambda k: k[1])
+        result_list.sort(key=lambda k: k[1], reverse=True)
         return result_list
 
     def train(self) -> None:
         """
         Trains the agent on actions chosen during this game with regards to the reward by the game outcome.
         """
-        self.city_agent.train(self.city_replay_memory, iterations=3)
-        self.disease_agent.train(self.disease_replay_memory, iterations=3)
-        self.city_replay_memory.flush()
-        self.disease_replay_memory.flush()
+        self.agent.train(self.replay_memory, iterations=3)
+        self.replay_memory.flush()
 
     def update_reward(self, reward: float) -> None:
         """
         Updates entries in the replay buffer on the reward.
         :param reward: Quality of chosen decision.
         """
-        self.city_replay_memory.update_reward(reward)
-        self.disease_replay_memory.update_reward(reward)
+        self.replay_memory.update_reward(reward)
 
     # Return True wenn fehlerhaft
     def check_response(self, response_: json, game_json: json) -> bool:
@@ -272,7 +244,7 @@ class TorchAgent:
 
         :return: List of all models trained by this agent.
         """
-        model_list: list = self.city_agent.get_models("city") + self.disease_agent.get_models("disease")
+        model_list: list = self.agent.get_models()
         return model_list
 
     def get_models_as_tar_bin(self) -> io.BytesIO:
@@ -292,8 +264,7 @@ class TorchAgent:
         :return: Model weights saved in pth file.
         """
         iteration_counter = str(iteration_counter)
-        self.city_agent.save("city", iteration_counter)
-        self.disease_agent.save("disease", iteration_counter)
+        self.agent.save(iteration_counter)
 
     def load(self, path: str = None) -> None:
         """
@@ -301,10 +272,9 @@ class TorchAgent:
         :param path: Path where the models are saved.
         :return: None
         """
-        self.city_agent.load("city", path)
-        self.disease_agent.load("disease", path)
+        self.agent.load(path)
 
-    def load_bin(self, bin_models: io.BytesIO) -> None:
+    def load_bin(self, bin_models: tarfile.TarFile) -> None:
         """
         Loads model weights form a tar file (binary form) into our models.
 
@@ -312,11 +282,6 @@ class TorchAgent:
         :return: None
         """
         city_models = []
-        disease_models = []
         for model_info in bin_models:
-            if "city" in model_info.name:
-                city_models.append((bin_models.extractfile(model_info), model_info.name))
-            elif "disease" in model_info.name:
-                disease_models.append((bin_models.extractfile(model_info), model_info.name))
-        self.city_agent.load_bin(city_models)
-        self.disease_agent.load_bin(disease_models)
+            city_models.append((bin_models.extractfile(model_info), model_info.name))
+        self.agent.load_bin(city_models)

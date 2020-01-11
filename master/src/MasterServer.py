@@ -1,4 +1,3 @@
-import io
 import sqlite3
 import tarfile
 import uuid
@@ -6,7 +5,7 @@ import uuid
 from flask import Flask, request, redirect, Response, send_file, abort
 from werkzeug.datastructures import FileStorage
 
-from common.d3t_agent.TorchAgent import TorchAgent
+from common.data_processing.tar_buffer import merge_models_tar_to_buffered_tar
 from master.src.ModelMerger import ModelMerger
 
 """
@@ -20,19 +19,17 @@ MODEL_TYPES = ["actor_target", "actor", "critic_target", "critic"]
 MODEL_CLASSES = ["city", "disease"]
 
 sql_create_models_table = """ CREATE TABLE IF NOT EXISTS models (
-                            model_class text,
                             model_type text,
                             id text,
                             model blob,
-                            PRIMARY KEY(id, model_class, model_type)
+                            PRIMARY KEY(id, model_type)
                             );
                           """
 
 sql_create_ref_table = """ CREATE TABLE IF NOT EXISTS max_model (
-                            model_class text,
                             model_type text,
                             model blob,
-                            PRIMARY KEY(model_class, model_type)
+                            PRIMARY KEY(model_type)
                             );
                        """
 
@@ -45,7 +42,7 @@ sql_create_settings_table = """ CREATE TABLE IF NOT EXISTS settings (
 sql_set_exploration = """ REPLACE INTO settings VALUES ("id"=0,?);"""
 sql_get_exploration = """ SELECT exploration FROM settings WHERE "id"=0; """
 sql_get_ref_models = """ SELECT * FROM max_model; """
-sql_replace_model = """ REPLACE INTO models VALUES (?,?,?,?); """
+sql_replace_model = """ REPLACE INTO models VALUES (?,?,?); """
 
 app = Flask(__name__)
 
@@ -91,15 +88,10 @@ def save_model(model: tarfile, model_info: tarfile.TarInfo, client_id: uuid.UUID
             model_type = type_
             break
 
-    for class_ in MODEL_CLASSES:
-        if class_ in model_info:
-            model_class = class_
-            break
-
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
     bin_mod = model.read()
-    c.execute(sql_replace_model, (str(model_class), str(model_type), str(client_id), bin_mod))
+    c.execute(sql_replace_model, (str(model_type), str(client_id), bin_mod))
     conn.commit()
     conn.close()
 
@@ -215,7 +207,7 @@ def return_model():
             models = c.fetchall()
             conn.commit()
             conn.close()
-            outer_tar_buffer = TorchAgent.merge_to_buffered_tar(models)
+            outer_tar_buffer = merge_models_tar_to_buffered_tar(models)
             return send_file(outer_tar_buffer,
                              mimetype="application/tar",
                              as_attachment=True,

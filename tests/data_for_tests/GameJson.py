@@ -1,5 +1,4 @@
 game_json = {
-
     'outcome': 'pending',
     'round': 25,
     'points': 309,
@@ -462,3 +461,30 @@ diseases = [{'id': 0, 'name': 'Endoictus', 'vaccine_available_or_in_development'
             {'id': 2, 'name': 'Admiral Trips', 'vaccine_available_or_in_development': 0,
              'medication_available_or_in_development': 1, 'duration': 0.25, 'lethality': 1, 'infectivity': 1,
              'mobility': 0.75, 'world_prevalence': 0.0}]
+
+city_obj = {"name": "Nashville", "latitude": 36.166051, "longitude": -86.778387, "population": 1667,
+            "connections": ["Ciudad de Panamá", "Ouagadougou", "الخرطوم", "Warszawa", "ວຽງຈັນ"],
+            "events": [{
+                "type": "outbreak",
+                "pathogen": {
+                    "name": "Neurodermantotitis",
+                    "infectivity": "+",
+                    "mobility": "o",
+                    "duration": "o",
+                    "lethality": "o"
+                },
+                "prevalence": 0.1,
+                "sinceRound": 1},
+                {
+                    "type": "outbreak",
+                    "pathogen": {
+                        "name": "Geranitis",
+                        "infectivity": "+",
+                        "mobility": "o",
+                        "duration": "o",
+                        "lethality": "o"
+                    },
+                    "prevalence": 0.6,
+                    "sinceRound": 2}
+            ],
+            "economy": "+", "government": "+", "hygiene": "o", "awareness": "o"},
