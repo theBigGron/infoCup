@@ -65,13 +65,19 @@ class TorchAgent:
         for city in cities:
 
             for disease in diseases:
-                city_with_disease = merge_city_disease(city, disease)
-                action = self.agent.select_action(city_with_disease)
-                self.replay_memory.add(city_with_disease,
-                                       action=action,
-                                       object_name=disease["name"] + city['city_name'],
-                                       round_=round_)
-                city_action_list = Actions(city["city_name"], disease["name"], action).action_list
+                agent_input = merge_city_disease(city, disease)
+                agent_output = self.agent.select_action(agent_input)
+                self.replay_memory.add(
+                    agent_input,
+                    action=agent_output,
+                    object_name=disease["name"] + city['city_name'],
+                    round_=round_)
+                city_action_list = Actions(city["city_name"],
+                                           disease["name"],
+                                           agent_input,
+                                           agent_output,
+                                           round_
+                                           ).action_list
                 result_list += city_action_list
 
         result_list.sort(key=lambda k: k[1], reverse=True)

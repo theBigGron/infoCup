@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -20,6 +19,6 @@ class Actor(nn.Module):
         state = F.relu(self.layer_2(state))
         state = F.relu(self.layer_3(state))
         state = F.relu(self.layer_4(state))
-        action = torch.tanh(self.layer_5(state))
+        action = self.layer_5(state)
 
         return action

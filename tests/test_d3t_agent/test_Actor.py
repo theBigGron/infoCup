@@ -1,5 +1,9 @@
 import unittest
 
+import numpy as np
+import torch
+from torch import device
+
 from common.d3t_agent.Actor import Actor
 
 """
@@ -36,6 +40,8 @@ class ActorTest(unittest.TestCase):
         self.assertTrue(test_actor.max_action == max_action)
         self.assertFalse(test_actor.layer_1.in_features == state_dim - 1)
 
+    def test_out(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()
