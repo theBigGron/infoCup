@@ -6,9 +6,9 @@ from typing import List, Tuple
 from common.d3t_agent.ReplayMemory import ReplayBuffer
 from common.d3t_agent.TD3Strategy import TD3
 from common.data_processing import state_actions
-from common.data_processing.tar_buffer import merge_models_tar_to_buffered_tar
 from common.data_processing.state_actions import Actions, ActionInfo
 from common.data_processing.state_extractor import GameState
+from common.data_processing.tar_buffer import merge_models_tar_to_buffered_tar
 from common.data_processing.utils import merge_city_disease, valid_response
 
 INPUT_SIZE = 16
@@ -34,24 +34,17 @@ class TorchAgent:
         :param state: Current game state.
         :return: List of all possible actions. Ordered by their activation.
         """
-        try:
-            cities = state.city_info_list_of_dicts
-            diseases = state.disease_info_list_of_dicts
-            round_ = state.round
 
+        cities = state.city_info_list_of_dicts
+        diseases = state.disease_info_list_of_dicts
+        round_ = state.round
 
-            result_list = self._get_actions(cities, diseases, round_)
+        result_list = self._get_actions(cities, diseases, round_)
 
-            action = self.select_action(result_list, state)
+        action = self.select_action(result_list, state)
 
-            response = action.server_message
-            print(response)
-            if "endRound" in response:
-                print(" ")
+        response = action.server_message
 
-        except Exception as ex:
-            a = ex
-            print("hi")
         return response
 
     def select_action(self, action_list: List[ActionInfo], state: GameState) -> ActionInfo:

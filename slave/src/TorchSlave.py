@@ -3,27 +3,28 @@
     Agent Type is a Q-Learning-Agent.
 """
 import argparse
-import io
 import gc
+import io
+import json
 import logging
 import logging.config
 import os
 import tarfile
+import time
+
 import requests
-from flask import (Flask, Blueprint, flash, g, redirect, render_template, request, session, url_for)
+from flask import (Flask, Blueprint, render_template, request)
+from flask_cors import CORS
 from requests import post
 
-import common.data_processing.utils
 from common.d3t_agent.TorchAgent import TorchAgent
 from common.data_processing.state_extractor import GameState
-from common.vis.Visualization import Visualization
 
 app = Flask(__name__)  # pylint: disable=C0103
 CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 bp = Blueprint('map', __name__, url_prefix='/map')
-
 
 # Disable flask default logging
 log = logging.getLogger('werkzeug')
@@ -77,7 +78,7 @@ def process_request():
             global game_json
             game_json = game.json
             time.sleep(2)
-            #Visualization(game.json)
+            # Visualization(game.json)
         rounds = game.json["round"]
 
         if state.move_done() or "error" in game.json.keys():
@@ -129,9 +130,6 @@ def process_request():
 
                 os._exit(0)  # only way to avoid flasks auto-restart
             return "Over"
-
-
-
 
 
 @app.route('/get_game_json', methods=['GET'])
