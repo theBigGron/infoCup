@@ -1,15 +1,18 @@
 import unittest
 import json
 
-from common.data_processing.state_extractor import StateGenerator, eval_disease_prevalence
+from common.data_processing.state_extractor import GameState
+from common.data_processing.utils import eval_disease_prevalence
 from tests.data_for_tests import GameJson
 
 
 class TestExtractor(unittest.TestCase):
     def setUp(self):
-        with open(file="data_for_tests/test.json", mode='r', encoding='utf-8') as f:
+        with open(file="./tests/data_for_tests/test.json", mode='r', encoding='utf-8') as f:
             data = json.load(f)
-            self.sg = StateGenerator(data)
+            self.sg = GameState(data)
+
+        self.game_state = GameState(GameJson.game_json)
 
     def tearDown(self):
         pass
@@ -89,6 +92,48 @@ class TestExtractor(unittest.TestCase):
         diseases_with_prevalence = eval_disease_prevalence(data)
         self.assertTrue(diseases_with_prevalence["Geranitis"] == 0.6)
         self.assertTrue(diseases_with_prevalence["Neurodermantotitis"] == 0.1)
+
+    def test_find_event_in_city(self):
+
+        self.assertTrue(self.game_state.event_exists_in_city('New York City', "quarantine"))
+        self.assertFalse(self.game_state.event_exists_in_city('Abuja', "quarantine"))
+        self.assertTrue(self.game_state.event_exists_in_city('New York City', "outbreak"))
+        self.assertTrue(self.game_state.event_exists_in_city('New York City', "airportClosed"))
+        self.assertFalse(self.game_state.event_exists_in_city('Abuja', "airportClosed"))
+
+    def test_find_develop(self):
+        self.assertTrue(self.game_state.aid_in_development(pathogen_name="Phagum vidiianum", aid_type="vaccine"))
+        self.assertTrue(self.game_state.aid_in_development(pathogen_name="Admiral Trips", aid_type="medication"))
+        self.assertFalse(self.game_state.aid_in_development(pathogen_name="asd", aid_type="vaccine"))
+        self.assertFalse(self.game_state.aid_in_development(pathogen_name="Adips", aid_type="medication"))
+
+    def test_find_developed(self):
+        self.assertTrue(
+            self.game_state.aid_developed(pathogen_name="Methanobrevibacter colferi", aid_type="medication"))
+        self.assertTrue(
+            self.game_state.aid_developed(pathogen_name="Procrastinalgia", aid_type="vaccine"))
+        self.assertFalse(
+            self.game_state.aid_developed(pathogen_name="asfafasfi", aid_type="medication"))
+        self.assertFalse(
+            self.game_state.aid_developed(pathogen_name="jghd", aid_type="vaccine"))
+
+    def test_lock_down_over(self):
+        self.assertTrue(
+            self.game_state.lock_down_over(city_name="New York City", event_type="quarantine", round_=10))
+        self.assertFalse(
+            self.game_state.lock_down_over(city_name="New York City", event_type="quarantine", round_=9))
+        self.assertFalse(
+            self.game_state.lock_down_over(city_name="New York City", event_type="quarantine", round_=6))
+        self.assertTrue(
+            self.game_state.lock_down_over(city_name="Abuja", event_type="quarantine", round_=10))
+        self.assertTrue(
+            self.game_state.lock_down_over(city_name="New York City", event_type="airportClosed", round_=8))
+        self.assertFalse(
+            self.game_state.lock_down_over(city_name="New York City", event_type="airportClosed", round_=7))
+        self.assertFalse(
+            self.game_state.lock_down_over(city_name="New York City", event_type="airportClosed", round_=3))
+        self.assertTrue(
+            self.game_state.lock_down_over(city_name="Abuja", event_type="airportClosed", round_=10))
 
 
 if __name__ == '__main__':

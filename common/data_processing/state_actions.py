@@ -1,30 +1,24 @@
+from collections import OrderedDict
+
 from numpy import ndarray, nditer
-from enum import Enum
 
-
-class EnumActions(Enum):
-    """
-    Enum of City actions.
-    Is sorted in the order of declaration.
-    """
-    endRound = '{"type":"endRound"}'
-    putUnderQuarantine = '{{"type": "putUnderQuarantine", "city": "{city}", "rounds": {rounds}}}'
-    closeAirport = '{{"type": "closeAirport", "city": "{city}", "rounds": {rounds}}}'
-    excertInfluence = '{{"type": "exertInfluence", "city": "{city}"}}'
-    callElections = '{{"type": "callElections", "city": "{city}"}}'
-    applyHygienicMeasures = '{{"type": "applyHygienicMeasures", "city": "{city}" }}'
-    launchCampaign = '{{"type": "launchCampaign", "city": "{city}" }}'
-    deployMedication = '{{"type": "deployMedication", "pathogen": "{pathogen}", "city": "{city}" }}'
-    deployVaccine = '{{"type": "deployVaccine", "pathogen": "{pathogen}", "city": "{city}" }}'
-    developVaccine = '{{"type": "developVaccine", "pathogen": "{pathogen}" }}'
-    developMedication = '{{"type": "developMedication", "pathogen": "{pathogen}" }}'
-
-
-def get_number_of_actions() -> int:
-    """
-    :return: Required size of numpy array to use EnumActions
-    """
-    return len(EnumActions)+1
+ENUM_ACTIONS = [
+    {"message": '{type:"endRound"}', "fixed_costs": 0, "variable_costs": 0},
+    {"message": '{{"type": "putUnderQuarantine", "city": "{city}", "rounds": {rounds}}}',
+     "fixed_costs": 10, "variable_costs": 20},
+    {"message": '{{"type": "closeAirport", "city": "{city}", "rounds": {rounds}}}',
+     "fixed_costs": 5, "variable_costs": 15},
+    {"message": '{{"type": "exertInfluence", "city": "{city}"}}', "fixed_costs": 3, "variable_costs": 0},
+    {"message": '{{"type": "callElections", "city": "{city}"}}', "fixed_costs": 3, "variable_costs": 0},
+    {"message": '{{"type": "applyHygienicMeasures", "city": "{city}" }}', "fixed_costs": 3, "variable_costs": 0},
+    {"message": '{{"type": "launchCampaign", "city": "{city}" }}', "fixed_costs": 3, "variable_costs": 0},
+    {"message": '{{"type": "deployMedication", "pathogen": "{pathogen}", "city": "{city}" }}',
+     "fixed_costs": 10, "variable_costs": 0},
+    {"message": '{{"type": "deployVaccine", "pathogen": "{pathogen}", "city": "{city}" }}',
+     "fixed_costs": 5, "variable_costs": 0},
+    {"message": '{{"type": "developVaccine", "pathogen": "{pathogen}" }}', "fixed_costs": 40, "variable_costs": 0},
+    {"message": '{{"type": "developMedication", "pathogen": "{pathogen}" }}', "fixed_costs": 20, "variable_costs": 0},
+]
 
 
 class Actions:
@@ -34,18 +28,23 @@ class Actions:
     q len must be len(EnumActions)+1
 
     """
-    def __init__(self, city_name: str, pathogen: str, state: ndarray, action_out: ndarray, round):
+
+    def __init__(self, city_name: str, pathogen: str, state: ndarray, action_out: ndarray, round_):
         self.action_list = []
-        for x, entry in EnumActions:
-            a = ActionInfo(city_name, pathogen, server_message=EnumActions[x])
 
-            action = x[0].value
-            rounds = int((action_out[0] * 30)) + 1
-            self.action_list.append((action, float(x[1])))
-        self.action_list.sort(key=lambda k: k[1], reverse=True)
-
-    def get_max_action(self):
-        return self.action_list[0]
+        for activation_index, activation in enumerate(action_out[1:]):
+            rounds_ = abs(int((action_out[0] * 30))) + 1
+            action_info = ActionInfo(city_name=city_name,
+                                     pathogen_name=pathogen,
+                                     state=state,
+                                     action_out=action_out,
+                                     activation=activation,
+                                     action=ENUM_ACTIONS[activation_index],
+                                     round_=round_,
+                                     rounds_=rounds_,
+                                     )
+            self.action_list.append(action_info)
+        self.action_list.sort(reverse=True)
 
 
 class ActionInfo:
@@ -54,21 +53,33 @@ class ActionInfo:
                  city_name: str,
                  pathogen_name: str,
                  state: ndarray,
-                 action: ndarray,
-                 rounds_: str,
+                 action_out: ndarray,
                  activation: float,
-                 server_message: str):
+                 action: dict,
+                 rounds_: int,
+                 round_: int):
 
         self.city_name = city_name
         self.pathogen_name = pathogen_name
+        self.round_ = round_
         self.state = state
-        self.action = action
+        self.action_out = action_out
         self.rounds_ = rounds_
-        self.activation = activation
-        self.server_message = self.format_message(server_message)
+        self.activation = float(activation)
+        self.costs = action["fixed_costs"] + action["variable_costs"] * self.rounds_
+        self.server_message = self.format_message(action["message"])
+
+    def __lt__(self, other):
+        return self.activation < other.activation
+
+    def __eq__(self, other):
+        return self.activation == other.activation
+
+    def __ge__(self, other):
+        return not self.__lt__(other) or self.__eq__(other)
 
     def format_message(self, message):
-        action = ""
+        action = message
         if "pathogen" in message:
             if "city" in message:
                 action = message.format(city=self.city_name, pathogen=self.pathogen_name)
@@ -80,4 +91,3 @@ class ActionInfo:
         elif "city" in message:
             action = message.format(city=self.city_name)
         return action
-

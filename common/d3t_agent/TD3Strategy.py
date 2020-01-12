@@ -15,11 +15,6 @@ from common.d3t_agent.ReplayMemory import ReplayBuffer
 # Selecting the device (CPU or GPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-MODEL_PATH = "./pytorch_models"
-
-if not os.path.exists(MODEL_PATH):
-    os.makedirs(MODEL_PATH)
-
 
 class TD3:
 
@@ -41,7 +36,6 @@ class TD3:
         self.critic = Critic(state_dim, action_dim).to(device)
         self.critic_target = Critic(state_dim, action_dim).to(device)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters())
-        self.max_action = 1
 
     def select_action(self, state: np.array):
         """
@@ -58,10 +52,10 @@ class TD3:
     def train(self,
               replay_buffer: ReplayBuffer,
               iterations: int,
-              batch_size: int = 10000,
+              batch_size: int = 1000,
               discount: float = 0.99,
-              tau: float = 0.005,
-              policy_freq: int = 2):
+              tau: float = 0.05,
+              policy_freq: int = 3):
         """
         Trains the neural network on given data. For multiple iterations.
 
@@ -89,7 +83,8 @@ class TD3:
 
             # Step 6: We add Gaussian noise to this next action a’ and we clamp it in a range of values supported by
             # the environment
-            next_action = (next_action).clamp(-self.max_action, self.max_action)
+            noise = torch.Tensor(np.random.normal(0, 0.05, 12)).to(device)
+            next_action = (next_action+noise).clamp(-1, 1)
 
             # Step 7: The two Critic targets take each the couple (s’, a’) as input and return two Q-values Qt1(s’,
             # a’) and Qt2(s’,a’) as outputs
@@ -146,18 +141,18 @@ class TD3:
         :return: None
         """
         for directory in ["max", dir_]:
-            if not os.path.exists(f'{MODEL_PATH}/{directory}'):
-                os.makedirs(f'{MODEL_PATH}/{directory}')
-            actor_path = f'{MODEL_PATH}/{directory}/actor.pth.tar'
+            if not os.path.exists(f'{directory}'):
+                os.makedirs(f'{directory}')
+            actor_path = f'{directory}/actor.pth.tar'
             torch.save({'state_dict': self.actor.state_dict()}, actor_path)
 
-            actor_target_path = f'{MODEL_PATH}/{directory}/actor_target.pth.tar'
+            actor_target_path = f'{directory}/actor_target.pth.tar'
             torch.save({'state_dict': self.actor_target.state_dict()}, actor_target_path)
 
-            critic_path = f'{MODEL_PATH}/{directory}/critic.pth.tar'
+            critic_path = f'{directory}/critic.pth.tar'
             torch.save({'state_dict': self.critic.state_dict()}, critic_path)
 
-            critic_target_path = f'{MODEL_PATH}/{directory}/critic_target.pth.tar'
+            critic_target_path = f'{directory}/critic_target.pth.tar'
             torch.save({'state_dict': self.critic_target.state_dict()}, critic_target_path)
 
     def get_models(self, ) -> List[Tuple[str, str, bytes]]:
