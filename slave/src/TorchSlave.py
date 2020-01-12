@@ -5,22 +5,25 @@
 import argparse
 import io
 import gc
-import json
 import logging
 import logging.config
 import os
-import random
 import tarfile
 import requests
-from flask import Flask
-from flask import request
+from flask import (Flask, Blueprint, flash, g, redirect, render_template, request, session, url_for)
 from requests import post
 
 import common.data_processing.utils
 from common.d3t_agent.TorchAgent import TorchAgent
 from common.data_processing.state_extractor import GameState
+from common.vis.Visualization import Visualization
 
 app = Flask(__name__)  # pylint: disable=C0103
+CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+bp = Blueprint('map', __name__, url_prefix='/map')
+
 
 # Disable flask default logging
 log = logging.getLogger('werkzeug')
@@ -60,7 +63,7 @@ def process_request():
     Deterministic tells if the agent should always take the greedy function, or explore further.
     Training tells if the agent should learn after playing a game.
     """
-    global agent, iteration_counter, game_counter  # pylint: disable=C0103, global-statement
+    global agent, iteration_counter, game_counter, visuals  # pylint: disable=C0103, global-statement
 
     logging.basicConfig(filename='example.log', level=logging.DEBUG)
 
@@ -69,7 +72,12 @@ def process_request():
 
     if game.method == 'POST':
 
-        state = GameState(request.json)
+        state = GameState(game.json)
+        if visuals:
+            global game_json
+            game_json = game.json
+            time.sleep(2)
+            #Visualization(game.json)
         rounds = game.json["round"]
 
         if state.move_done() or "error" in game.json.keys():
@@ -126,6 +134,16 @@ def process_request():
 
 
 
+@app.route('/get_game_json', methods=['GET'])
+def get_game_json():
+    return json.dumps(game_json)
+
+
+@app.route('/map', methods=['GET'])
+def get_map():
+    return render_template('map.html')
+
+
 if __name__ == '__main__':
     global game_counter, iteration_counter
 
@@ -158,3 +176,5 @@ if __name__ == '__main__':
     game_counter = 0
     game_json = None
     app.run(debug=True, host='localhost', port=startup_args.port if startup_args.port else 50123, threaded=True)
+    app.register_blueprint(bp)
+    app.run(host='localhost', port=startup_args.port if startup_args.port else 5000, threaded=True)

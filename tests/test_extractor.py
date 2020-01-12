@@ -1,18 +1,19 @@
 import unittest
 import json
+import pprint
 
 from common.data_processing.state_extractor import GameState
 from common.data_processing.utils import eval_disease_prevalence
 from tests.data_for_tests import GameJson
-
+from tests.GameJson import game_json
+from tests.GameJson import game_json2
 
 class TestExtractor(unittest.TestCase):
     def setUp(self):
-        with open(file="./tests/data_for_tests/test.json", mode='r', encoding='utf-8') as f:
-            data = json.load(f)
-            self.sg = GameState(data)
-
+        self.sg1 = StateGenerator(game_json)
+        self.sg2 = StateGenerator(game_json2)
         self.game_state = GameState(GameJson.game_json)
+
 
     def tearDown(self):
         pass
@@ -22,7 +23,7 @@ class TestExtractor(unittest.TestCase):
         self.assertEqual(40, self.sg.points)
 
     def test_build_norm_disease_info_list(self):
-        self.sg.build_norm_disease_info_list()
+        self.sg2.build_norm_disease_info_list()
         disease_info_list_of_dicts = []
         disease_info_dict = {
             'id': 0,
@@ -48,10 +49,10 @@ class TestExtractor(unittest.TestCase):
             'world_prevalence': 0.0020452925878966803
         }
         disease_info_list_of_dicts.append(disease_info_dict)
-        self.assertEqual(disease_info_list_of_dicts, self.sg.disease_info_list_of_dicts)
+        self.assertEqual(disease_info_list_of_dicts, self.sg2.disease_info_list_of_dicts)
 
     def test_build_city_info_list(self):
-        self.sg.build_city_info_list()
+        self.sg2.build_city_info_list()
         city_info_dict = {
             'city_name': 'Abuja',
             # Norm the population in regard to former calculated world_population
@@ -71,10 +72,10 @@ class TestExtractor(unittest.TestCase):
             'anti-vaccinationism': 0
             # 'disease__prevalence':
         }
-        self.assertEqual(city_info_dict, self.sg.city_info_list_of_dicts[0])
+        self.assertEqual(city_info_dict, self.sg2.city_info_list_of_dicts[0])
 
     def test_world_population(self):
-        self.assertEqual(756371, self.sg.world_population)
+        self.assertEqual(756371, self.sg2.world_population)
     # def test_empty_post_req(self):
     #    response = self.app.post("", follow_redirects=True)
     #    self.assertEqual(response.status, "200 OK")

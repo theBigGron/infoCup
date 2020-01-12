@@ -164,23 +164,29 @@ class GameState:
 
         :param type: The type of a anti-disease action, MAY ONLY be 'vaccine' or 'medication'
         :param disease_name: The name of a disease, MAY ONLY be one of all name of diseases
-        :return: 1 if type is available or in development, 0 otherwise
+        :return: 1 if type is available, (1,0) indicates the progress of development if in development, 0 otherwise
         """
         is_available = False
         is_in_development = False
+        # This indicates the development progress based on the sinceRound/untilRound attr. in the global events
+        # It is only be set/useful if the disease with disease_name is in development.
+        dev_progress = -1
         for event in self.events:
             # Check if event type is typed development or availbility
             if event['type'] == type + 'InDevelopment':
                 if event['pathogen']['name'] == disease_name:
                     is_in_development = True
+                    dev_progress = float(event['sinceRound']) / float(event['untilRound'])
                     break
             elif event['type'] == type + 'Available':
                 if event['pathogen']['name'] == disease_name:
                     is_available = True
                     break
 
-        if is_available or is_in_development:
+        if is_available:
             return 1
+        elif is_in_development:
+            return dev_progress
         else:
             return 0
 
