@@ -10,7 +10,7 @@ from torch import nn
 from common.d3t_agent import TorchAgent
 from common.d3t_agent.Actor import Actor
 from common.d3t_agent.Critic import Critic
-from common.data_processing import state_actions
+from common.data_processing.state_actions import ENUM_ACTIONS
 
 sql_select_models = """SELECT model FROM models WHERE model_type LIKE ?;"""
 sql_replace_max_model = """REPLACE INTO max_model VALUES (?,?);"""
@@ -87,7 +87,7 @@ class ModelMerger(Thread):
         :return: Neural network.
         """
         input_size = TorchAgent.INPUT_SIZE
-        output_size = state_actions.get_number_of_actions()
+        output_size = len(ENUM_ACTIONS)+1
 
         if model_type == "actor" or model_type == "actor_target":
             model = Actor(input_size, output_size)

@@ -10,8 +10,9 @@ import logging.config
 from flask import Flask
 from flask import request
 
+import common.data_processing.utils
 from common.d3t_agent.TorchAgent import TorchAgent
-from common.data_processing.state_extractor import StateGenerator
+from common.data_processing.state_extractor import GameState
 
 app = Flask(__name__)  # pylint: disable=C0103
 
@@ -64,7 +65,7 @@ def process_request():
 
     if game.method == 'POST':
 
-        state = StateGenerator(request.json)
+        state = GameState(request.json)
         rounds = game.json["round"]
 
         if state.move_done() or "error" in game.json.keys():
@@ -96,7 +97,7 @@ def process_request():
         if game.json['outcome'] == 'pending':
             if isinstance(response_, list):
                 choice_counter = 0
-                while agent.check_response(json.loads(response_[choice_counter][0]), game.json):
+                while common.data_processing.utils.valid_response(json.loads(response_[choice_counter][0]), game.json):
                     choice_counter += 1
                 return response_[choice_counter][0]
         else:
