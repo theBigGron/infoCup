@@ -40,6 +40,7 @@ class TorchAgent:
         round_ = state.round
 
         result_list = self._get_actions(cities, diseases, round_)
+        self.replay_memory.update_old_info_actions(result_list)
 
         action = self.select_action(result_list, state)
 
@@ -72,7 +73,7 @@ class TorchAgent:
             else:
                 self._bad_action(action)
 
-    def _get_actions(self, cities: dict, diseases: dict, round_: int) -> List[Actions]:
+    def _get_actions(self, cities: dict, diseases: dict, round_: int) -> List[ActionInfo]:
         """
         Calculates most urgent action for cities.
         Saves current state and actions for each possible action to replay buffer.
@@ -124,7 +125,7 @@ class TorchAgent:
         Updates entries in the replay buffer on the reward.
         :param reward: Quality of chosen decision.
         """
-        self.replay_memory.update_reward(reward)
+        self.replay_memory.update_reward_and_clear(reward)
 
     def get_models(self) -> List[Tuple[str, str, bytes]]:
         """

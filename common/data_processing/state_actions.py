@@ -69,6 +69,10 @@ class ActionInfo:
         self.costs = action["fixed_costs"] + action["variable_costs"] * self.rounds_
         self.server_message = self.format_message(action["message"])
 
+        # To be added Later
+        self.state_new = None  # added in round self.round_+1
+        self.reward = None  # added after game
+
     def __lt__(self, other):
         return self.activation < other.activation
 
