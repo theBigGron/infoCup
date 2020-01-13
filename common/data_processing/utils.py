@@ -43,7 +43,7 @@ def city_dict_to_np_arr(city: dict, disease: str) -> np.ndarray:
     disease_prevalence = 0
     if 'disease_prevalence' in city.keys():
         if disease in city['disease_prevalence'].keys():
-            disease_prevalence = city['disease__prevalence'][disease]
+            disease_prevalence = city['disease_prevalence'][disease]
     elem_value_list = [
         city['population'],
         city['amount_connections'],
