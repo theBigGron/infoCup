@@ -13,16 +13,13 @@ import tarfile
 import time
 
 import requests
-from flask import (Flask, Blueprint, render_template, request)
-from flask_cors import CORS
+from flask import (Flask, request)
 from requests import post
 
 from common.d3t_agent.TorchAgent import TorchAgent
 from common.data_processing.state_extractor import GameState
 
 app = Flask(__name__)  # pylint: disable=C0103
-CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
 
 # Disable flask default logging
 log = logging.getLogger('werkzeug')
@@ -126,7 +123,6 @@ if __name__ == '__main__':
 
     startup_args = arg_parser.parse_args()
     training = startup_args.no_training
-    visuals = startup_args.visualisation
     iteration_counter = 0
 
     target_ip = startup_args.ip_out if startup_args.ip_out else "http://0.0.0.0:8087"
@@ -152,6 +148,4 @@ if __name__ == '__main__':
 
     game_counter = 0
     game_json = None
-    app.run(debug=True, host='localhost', port=startup_args.port if startup_args.port else 50123, threaded=True)
-    #app.register_blueprint(bp)
-    #app.run(host='localhost', port=startup_args.port if startup_args.port else 5000, threaded=True)
+    app.run(debug=False, host='localhost', port=startup_args.port if startup_args.port else 50123, threaded=True)

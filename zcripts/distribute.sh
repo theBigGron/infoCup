@@ -9,7 +9,7 @@ do
   /snap/bin/docker login --username pgronau -p \$(cat ~/docker_pw.txt) ;\
   /snap/bin/docker stop \$(/snap/bin/docker ps -a -q) ;\
   /snap/bin/docker rm \$(/snap/bin/docker ps -a -q) ;\
-  /snap/bin/docker image rm -a ;\
+  echo 'y' | /snap/bin/docker image rm -a ;\
   /snap/bin/docker system prune -a ;\
   rm -r slave.tar ;\
   rm -r .cache/pip/;\

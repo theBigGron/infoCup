@@ -8,16 +8,18 @@ import logging
 import logging.config
 import time
 
-from flask import (Flask, Blueprint, flash, g, redirect, render_template, request, session, url_for)
+from flask import (Flask, Blueprint, render_template)
+from flask_cors import CORS
 from flask import request
 
 import common.data_processing.utils
 from common.d3t_agent.TorchAgent import TorchAgent
 from common.data_processing.state_extractor import GameState
 
-from common.vis.Visualization import Visualization
-
 app = Flask(__name__)  # pylint: disable=C0103
+# This makes AJAX to work properly
+CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 bp = Blueprint('map', __name__, url_prefix='/map')
 
@@ -47,7 +49,9 @@ visuals = startup_args.visualisation
 
 # Loading agent
 agent: TorchAgent = TorchAgent()
-agent.load(dirs)
+#model_dir = "pytorch_models"
+#dirs = f"./{model_dir}"
+#agent.load(dirs)
 print("Loaded max")
 # Loading Logger
 csv_logger = startup_args.logging
@@ -77,7 +81,6 @@ def process_request():
             global game_json
             game_json = game.json
             time.sleep(2)
-            #Visualization(game.json)
         rounds = game.json["round"]
 
         if state.move_done() or "error" in game.json.keys():
@@ -117,10 +120,16 @@ def process_request():
             return "end"
 
 
+@app.route('/get_game_json', methods=['GET'])
+def get_game_json():
+    return json.dumps(game_json)
+
+
 @app.route('/map', methods=['GET'])
 def get_map():
     return render_template('map.html')
 
+
 if __name__ == '__main__':
     app.register_blueprint(bp)
-    app.run(host='0.0.0.0', port=startup_args.port if startup_args.port else 50123, threaded=True)
+    app.run(debug=False, host='0.0.0.0', port=startup_args.port if startup_args.port else 50123, threaded=True)
