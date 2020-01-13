@@ -38,8 +38,6 @@ startup_args = arg_parser.parse_args()
 
 # Loading agent
 agent: TorchAgent = TorchAgent()
-model_dir = "pytorch_models"
-dirs = f"./{model_dir}"
 agent.load(dirs)
 print("Loaded max")
 # Loading Logger

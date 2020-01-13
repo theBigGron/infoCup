@@ -16,9 +16,8 @@ from master.src.ModelMerger import ModelMerger
 DATABASE = "./models.db"
 ALLOWED_EXTENSIONS = {'pth', 'tar'}
 MODEL_TYPES = ["actor_target", "actor", "critic_target", "critic"]
-MODEL_CLASSES = ["city", "disease"]
 
-sql_create_models_table = """ CREATE TABLE IF NOT EXISTS models (
+sql_create_models_table = """CREATE TABLE IF NOT EXISTS models (
                             model_type text,
                             id text,
                             model blob,
@@ -26,14 +25,14 @@ sql_create_models_table = """ CREATE TABLE IF NOT EXISTS models (
                             );
                           """
 
-sql_create_ref_table = """ CREATE TABLE IF NOT EXISTS max_model (
+sql_create_ref_table = """CREATE TABLE IF NOT EXISTS max_model (
                             model_type text,
                             model blob,
                             PRIMARY KEY(model_type)
                             );
                        """
 
-sql_create_settings_table = """ CREATE TABLE IF NOT EXISTS settings (
+sql_create_settings_table = """CREATE TABLE IF NOT EXISTS settings (
                                  id INTEGER PRIMARY KEY CHECK (id = 0),
                                  exploration float
                                  );
@@ -53,14 +52,17 @@ def setup_db() -> None:
 
     :return: None
     """
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute(sql_create_models_table)
-    c.execute(sql_create_ref_table)
-    c.execute(sql_create_settings_table)
-    c.execute(sql_set_exploration, [1])
-    conn.commit()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DATABASE)
+        c = conn.cursor()
+        c.execute(sql_create_models_table)
+        c.execute(sql_create_ref_table)
+        c.execute(sql_create_settings_table)
+        c.execute(sql_set_exploration, [1])
+        conn.commit()
+        conn.close()
+    except Exception as ex:
+        print(ex)
 
 
 def allowed_file(filename: str) -> bool:
@@ -123,7 +125,6 @@ def upload_file() -> str:
             print('No file part')
             return redirect(request.url)
         file = request.files['models']
-        print(file.filename)
         # if user does not select file, browser also
         # submit an empty part without filename
         if file.filename == '':
@@ -218,6 +219,6 @@ def return_model():
 
 if __name__ == '__main__':
     setup_db()
-    model_merger = ModelMerger(DATABASE, MODEL_CLASSES, MODEL_TYPES)
+    model_merger = ModelMerger(DATABASE, MODEL_TYPES)
     model_merger.start()
-    app.run(debug=True, host='0.0.0.0', port=8087, threaded=True)
+    app.run(debug=True, host='0.0.0.0', port=8087)

@@ -1,8 +1,9 @@
 import io
+import os
 import sqlite3
+import time
 from copy import deepcopy
 from threading import Thread
-from time import sleep
 
 import torch
 from torch import nn
@@ -23,10 +24,9 @@ class ModelMerger(Thread):
     Merges all recieved models to one single reference model.
     """
 
-    def __init__(self, database, model_classes, model_types):
+    def __init__(self, database, model_types):
         Thread.__init__(self)
         self.database = database
-        self.model_classes = model_classes
         self.model_types = model_types
 
     def run(self) -> None:
@@ -36,15 +36,17 @@ class ModelMerger(Thread):
         :return: None
         """
         while True:
+
             successful_update = self.update()
+            print(successful_update)
             if successful_update:
-                # update each 30 min if models were merged
+                # update each 20 min if models were merged
                 print("Update successful")
-                sleep(60 * 20)
+                time.sleep(20*60)
             else:
                 # try updating again after 2 min
                 print("Update not successful")
-                sleep(60 * 2)
+                time.sleep(5*60)
 
     def update(self) -> bool:
         """ merges models in sqlite db
@@ -52,29 +54,25 @@ class ModelMerger(Thread):
 
         :return: weather or not it was possible to merge models
         """
-        try:
-            print("Updating models")
-            conn = sqlite3.connect(self.database, timeout=10)
-            c = conn.cursor()
-            conn.commit()
-            for type_name in self.model_types:
-                c.execute(sql_select_models, [type_name])
-                models = c.fetchall()
-                if len(models) < 1:
-                    conn.rollback()
-                    return False
-                merged_model = self.merge(models, type_name)
-                buffer = io.BytesIO()
-                torch.save({'state_dict': merged_model.state_dict()}, buffer)
-                data = buffer.getvalue()
-                c.execute(sql_replace_max_model, [type_name, data])
-            conn.commit()
-            c.execute(sql_delete_models)
-            conn.close()
-            return True
-        except Exception:
-            print("Error during updating")
-            raise Exception
+        conn = sqlite3.connect(self.database)
+        c = conn.cursor()
+        for type_name in self.model_types:
+            c.execute(sql_select_models, [type_name])
+            models = c.fetchall()
+            if len(models) < 1:
+                conn.rollback()
+                conn.close()
+                return False
+            merged_model = self.merge(models, type_name)
+            buffer = io.BytesIO()
+            torch.save({'state_dict': merged_model.state_dict()}, buffer)
+            data = buffer.getvalue()
+            c.execute(sql_replace_max_model, [type_name, data])
+        conn.commit()
+        c.execute(sql_delete_models)
+        conn.commit()
+        conn.close()
+        return True
 
     def get_model(self, model_type: str, ) -> nn.Module:
         """

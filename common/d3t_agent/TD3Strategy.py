@@ -182,7 +182,7 @@ class TD3:
         if directory is not None:
             self.load_from_dir(directory)
         else:
-            if os.path.exists(f'{MODEL_PATH}/max'):
+            if os.path.exists(f'/max'):
                 self.load_from_dir("max")
             else:
                 print("path does not exist")

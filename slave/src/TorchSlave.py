@@ -117,7 +117,7 @@ def process_request():
                     f.write(f"{iteration_counter},{game.json['outcome']},{rounds},{reward}\n")
             gc.collect()
             # TODO: ITERATIONEN!
-            if iteration_counter % 30 == 0:
+            if iteration_counter % 50 == 0:
                 logging.info("Saving Model")
                 tar = agent.get_models_as_tar_bin()
                 files = {'models': ("models.tar", tar, "multipart/form-data")}
@@ -127,7 +127,7 @@ def process_request():
                      )
                 logging.info("Model saved")
                 logging.warning(f"Exiting after: {iteration_counter} iterations")
-
+                agent.save(1)
                 os._exit(0)  # only way to avoid flasks auto-restart
             return "Over"
 
@@ -174,5 +174,5 @@ if __name__ == '__main__':
     game_counter = 0
     game_json = None
     app.run(debug=True, host='localhost', port=startup_args.port if startup_args.port else 50123, threaded=True)
-    app.register_blueprint(bp)
-    app.run(host='localhost', port=startup_args.port if startup_args.port else 5000, threaded=True)
+    #app.register_blueprint(bp)
+    #app.run(host='localhost', port=startup_args.port if startup_args.port else 5000, threaded=True)
