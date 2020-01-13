@@ -2,29 +2,25 @@ import unittest
 import json
 import pprint
 
-from common.data_processing.state_extractor import StateGenerator
+from common.data_processing.state_extractor import GameState
+from common.data_processing.utils import eval_disease_prevalence
+from tests.data_for_tests import GameJson
 from tests.GameJson import game_json
 from tests.GameJson import game_json2
 
 class TestExtractor(unittest.TestCase):
     def setUp(self):
-        # with open(file="GameJson2.py", mode='w', encoding='utf-8') as f:
-        #     pp = pprint.PrettyPrinter(indent=4, stream=f)
-        #     with open(file="test.json", mode='r', encoding='utf-8') as f:
-        #         data = json.load(f)
-        #         self.sg = StateGenerator(data)
-        #         pp.pprint(data)
-
         self.sg1 = StateGenerator(game_json)
         self.sg2 = StateGenerator(game_json2)
+        self.game_state = GameState(GameJson.game_json)
 
 
     def tearDown(self):
         pass
 
     def test_meta_data(self):
-        self.assertEqual(self.sg2.round, 1)
-        self.assertEqual(self.sg2.points, 40)
+        self.assertEqual(1, self.sg.round)
+        self.assertEqual(40, self.sg.points)
 
     def test_build_norm_disease_info_list(self):
         self.sg2.build_norm_disease_info_list()
@@ -53,7 +49,7 @@ class TestExtractor(unittest.TestCase):
             'world_prevalence': 0.0020452925878966803
         }
         disease_info_list_of_dicts.append(disease_info_dict)
-        self.assertEqual(self.sg2.disease_info_list_of_dicts, disease_info_list_of_dicts)
+        self.assertEqual(disease_info_list_of_dicts, self.sg2.disease_info_list_of_dicts)
 
     def test_build_city_info_list(self):
         self.sg2.build_city_info_list()
@@ -66,6 +62,7 @@ class TestExtractor(unittest.TestCase):
             # This calculates the sum of the populations of the connected cities
             # and norms it by dividing with world_population
             'connected_city_population':0.014492887749530323,
+            'disease__prevalence': {},
             # These statements grab the value with given key from SYM_VALUE_NORM_NUMBER_DICT in order to
             # map --, ..., ++ to 0, ..., 1
             'economy': 0.5,
@@ -75,10 +72,10 @@ class TestExtractor(unittest.TestCase):
             'anti-vaccinationism': 0
             # 'disease__prevalence':
         }
-        self.assertEqual(self.sg2.city_info_list_of_dicts[0], city_info_dict)
+        self.assertEqual(city_info_dict, self.sg2.city_info_list_of_dicts[0])
 
     def test_world_population(self):
-        self.assertEqual(self.sg2.world_population, 756371)
+        self.assertEqual(756371, self.sg2.world_population)
     # def test_empty_post_req(self):
     #    response = self.app.post("", follow_redirects=True)
     #    self.assertEqual(response.status, "200 OK")
@@ -91,20 +88,53 @@ class TestExtractor(unittest.TestCase):
     #        self.assertEqual(response.status, "200 OK")
     #        self.assertEqual(response.json, {"type": "endRound"})
 
-    def test_is_available_or_in_development_for_disease(self):
-        self.sg1.build_norm_disease_info_list()
-        disease_info_dict = {
-            'duration': 0.25,
-            'id': 2,
-            'infectivity': 1,
-            'lethality': 1,
-            'medication_available_or_in_development': 0.625,
-            'mobility': 0.75,
-            'name': 'Admiral Trips',
-            'vaccine_available_or_in_development': 0,
-            'world_prevalence': 0.0
-        }
-        self.assertEqual(self.sg1.disease_info_list_of_dicts[2], disease_info_dict)
+    def test_eval_disease_prevalence(self):
+        data = GameJson.city_obj[0]
+        diseases_with_prevalence = eval_disease_prevalence(data)
+        self.assertTrue(diseases_with_prevalence["Geranitis"] == 0.6)
+        self.assertTrue(diseases_with_prevalence["Neurodermantotitis"] == 0.1)
+
+    def test_find_event_in_city(self):
+
+        self.assertTrue(self.game_state.event_exists_in_city('New York City', "quarantine"))
+        self.assertFalse(self.game_state.event_exists_in_city('Abuja', "quarantine"))
+        self.assertTrue(self.game_state.event_exists_in_city('New York City', "outbreak"))
+        self.assertTrue(self.game_state.event_exists_in_city('New York City', "airportClosed"))
+        self.assertFalse(self.game_state.event_exists_in_city('Abuja', "airportClosed"))
+
+    def test_find_develop(self):
+        self.assertTrue(self.game_state.aid_in_development(pathogen_name="Phagum vidiianum", aid_type="vaccine"))
+        self.assertTrue(self.game_state.aid_in_development(pathogen_name="Admiral Trips", aid_type="medication"))
+        self.assertFalse(self.game_state.aid_in_development(pathogen_name="asd", aid_type="vaccine"))
+        self.assertFalse(self.game_state.aid_in_development(pathogen_name="Adips", aid_type="medication"))
+
+    def test_find_developed(self):
+        self.assertTrue(
+            self.game_state.aid_developed(pathogen_name="Methanobrevibacter colferi", aid_type="medication"))
+        self.assertTrue(
+            self.game_state.aid_developed(pathogen_name="Procrastinalgia", aid_type="vaccine"))
+        self.assertFalse(
+            self.game_state.aid_developed(pathogen_name="asfafasfi", aid_type="medication"))
+        self.assertFalse(
+            self.game_state.aid_developed(pathogen_name="jghd", aid_type="vaccine"))
+
+    def test_lock_down_over(self):
+        self.assertTrue(
+            self.game_state.lock_down_over(city_name="New York City", event_type="quarantine", round_=10))
+        self.assertFalse(
+            self.game_state.lock_down_over(city_name="New York City", event_type="quarantine", round_=9))
+        self.assertFalse(
+            self.game_state.lock_down_over(city_name="New York City", event_type="quarantine", round_=6))
+        self.assertTrue(
+            self.game_state.lock_down_over(city_name="Abuja", event_type="quarantine", round_=10))
+        self.assertTrue(
+            self.game_state.lock_down_over(city_name="New York City", event_type="airportClosed", round_=8))
+        self.assertFalse(
+            self.game_state.lock_down_over(city_name="New York City", event_type="airportClosed", round_=7))
+        self.assertFalse(
+            self.game_state.lock_down_over(city_name="New York City", event_type="airportClosed", round_=3))
+        self.assertTrue(
+            self.game_state.lock_down_over(city_name="Abuja", event_type="airportClosed", round_=10))
 
 
 if __name__ == '__main__':

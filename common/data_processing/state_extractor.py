@@ -1,4 +1,4 @@
-import numpy as np
+from common.data_processing.utils import eval_disease_prevalence, eval_anti_vaccinationism
 
 MAX_ROUNDS = 200  # replace mit logarithmus
 MAX_AMOUNT_OF_CONNECTIONS = 20
@@ -8,7 +8,7 @@ SYM_VALUE_NORM_NUMBER_DICT = {
 }
 
 
-class StateGenerator:
+class GameState:
 
     def __init__(self, game_json):
         """
@@ -40,13 +40,6 @@ class StateGenerator:
     # /*                 */
     # /* *************** */
 
-    #def build_norm_global_info(self):
-    #    # TODO Grab values from global events
-    #    is_economic_crisis = False
-    #    is_large_scale_panic = False
-    #
-    #    norm_global_info = [self.round / MAX_ROUNDS, self.points / MAX_POINTS, is_economic_crisis, is_large_scale_panic]
-    #    return norm_global_info
 
     def build_norm_disease_info_list(self):
         # This is the list of all normed disease info
@@ -84,13 +77,7 @@ class StateGenerator:
                 self.disease_info_list_of_dicts.append(disease_info_dict)
 
     def build_city_info_list(self):
-        # This is the list of all normed city info
-        # This will be: [city_name = city_name, population=value/world_population,
-        # amount_connections=value/20[norm zwischen 0-1] , connected_city_population=value/world_population,
-        # economy=..., government=..., hygiene=..., awareness=...,[0-1 normieren]
-        # anti-vaccinationism=..., disease_1_prevalence=..., ..., disease_n_prevalence=...], !n=10 wenn nicht 10, dann auffüllen mit 0 immer an die gleiche Stelle
-        # [...], ...] (without the qualifier in front of the values)
-        # The ++, +, o, -, -- will be converted to a number (0,0.125,0.25,0.5,0.75,1)
+
         self.city_info_list_of_dicts = []
         # TODO Extract the city-info from cities as
         #  economy=..., government=..., hygiene=..., awareness=..., calculate
@@ -115,8 +102,8 @@ class StateGenerator:
                 'government': SYM_VALUE_NORM_NUMBER_DICT[city_obj['government']],
                 'hygiene': SYM_VALUE_NORM_NUMBER_DICT[city_obj['hygiene']],
                 'awareness': SYM_VALUE_NORM_NUMBER_DICT[city_obj['awareness']],
-                'anti-vaccinationism': self.eval_anti_vaccinationism(city_obj),
-                # 'disease__prevalence':
+                'anti-vaccinationism': eval_anti_vaccinationism(city_obj),
+                'disease__prevalence': eval_disease_prevalence(city_obj)
             }
             # Append the dicts of individual cities to the 'global' city list
             self.city_info_list_of_dicts.append(city_info_dict)
@@ -153,36 +140,6 @@ class StateGenerator:
 
         return connected_cities_population
 
-
-    def eval_anti_vaccinationism(self, city_obj) -> int:
-        """
-        This method return 1 if a antiVaccinationism event was found in the cities event list, and 0 if not
-
-        :param events: The events list from a city
-        :return: 1 if a antiVaccinationism event was found in the cities event list, 0 if not
-        """
-        # Check if events list is already present in city_obj
-        if 'events' not in city_obj:
-            # If events list is not already present in city_obj, no 'antiVaccinationism' event was found,
-            # so return 0
-            return 0
-        else:
-            for event in city_obj['events']:
-                if event['type'] == 'antiVaccinationism':
-                    # A 'antiVaccinationism'-event was found, so return 1 immediate
-                    return 1
-            # No 'antiVaccinationism'-event was found, so return 0
-            return 0
-
-    #def convert_city_list_of_dicts_to_city_list_of_np_arr(self, list_of_dicts: list) -> list:
-    #    list_of_np_arr = []
-    #    for elem in list_of_dicts:
-    #        # This gets the dict values as a list
-    #        elem_value_list = self.city_dict_to_np_arr(elem)
-    #        # This appends the np-arrayed dict value list to the list list_of_np_arr
-    #        list_of_np_arr.append(elem_value_list)
-    #    return list_of_np_arr
-
     # /* ************************ */
     # /*                          */
     # /*  Disease helper methods  */
@@ -200,7 +157,6 @@ class StateGenerator:
                         # Calculate the amount of affected people in the city
                         sum_of_city_prevalenced_population += event['prevalence'] * city_obj['population']
         return sum_of_city_prevalenced_population
-
 
     def is_available_or_in_development_for_disease(self, type, disease_name) -> int:
         """
@@ -233,18 +189,6 @@ class StateGenerator:
             return dev_progress
         else:
             return 0
-
-    #def convert_disease_list_of_dicts_to_disease_list_of_np_arr(self, list_of_dicts: list) -> list:
-    #    list_of_np_arr = []
-    #    for elem in list_of_dicts:
-    #        # This gets the dict values as a list
-    #        elem_value_list = self.dis_dict_to_np(elem)
-    #        # This appends the np-arrayed dict value list to the list list_of_np_arr
-    #        list_of_np_arr.append(np.array(elem_value_list))
-    #    return list_of_np_arr
-
-    #def convert_disease_to_list(self, disease: dict):
-    #    return np.array(list(disease.items(), dtype=[('id', 'u')]))
 
     # /* ************************ */
     # /*                          */
@@ -280,87 +224,83 @@ class StateGenerator:
     def get_errors(self):
         return self.game_json["error"]
 
+    def event_exists_in_city(self, city, event_type) -> bool:
+        """
+        Searches if an event exists in a certain city.
 
-def city_dict_to_np_arr(elem: dict) -> np.ndarray:
-    """
-    Parses our city dict into a numpy array representation
-    .
-    :param elem: City dict
-    :return: Array representing the city info state.
-    """
-    elem_value_list = [
-        elem['population'],
-        elem['amount_connections'],
-        elem['connected_city_population'],
-        elem['economy'],
-        elem['government'],
-        elem['hygiene'],
-        elem['awareness'],
-        elem['anti-vaccinationism']
-    ]
-    return np.array(elem_value_list)
+        :param game_json: Current game state.
+        :param city: City that we expect to contain an event.
+        :param event_type: Type of event that we are looking for.
+        :return:  False if city does not contain the event nor exists. True if the city contains the event.
+        """
+        city_obj = self.game_json["cities"][city]
+        if 'events' in city_obj:
+            for event in city_obj['events']:
+                if event['type'] == event_type:
+                    # Wenn das Event existiert
+                    return True
+        # Wenn das Event nicht existiert
+        return False
+
+    def aid_in_development(self, pathogen_name: str, aid_type: str):
+        """
+        Looks if a medication or vaccine has been developed already.
+
+        :param pathogen_name: Name of the pathogen we would like to develop aid for.
+        :param aid_type: Type of aid we would like to develop (Vaccione or Medication).
+        :return: True if medication is in development.
+        """
+        for event in self.events:
+            if aid_type in event['type'] and 'InDevelopment' in event['type']:
+                if event['pathogen']['name'] == pathogen_name:
+                    return True
+        # Not in development
+        return False
+
+    def aid_developed(self, pathogen_name: str, aid_type: str):
+        """
+        Looks if a medication or vaccine has been developed already.
+
+        :param pathogen_name: Name of the pathogen we would like to develop aid for.
+        :param aid_type: Type of aid we would like to develop (Vaccione or Medication).
+        :return: True if medication is in development.
+        """
+        for event in self.events:
+            if aid_type in event['type'] and 'Available' in event['type']:
+                if event['pathogen']['name'] == pathogen_name:
+                    return True
+        return False
+
+    def disease_in_city(self, city_name: str, pathogen_name: str ):
+        """
+        Checks if people are contaminated with a specific disease in a city.
+
+        :param city_name: Name of City.
+        :param pathogen_name: Name of Pathogen.
+        :return: True if people are infected.
+        """
+        city_obj = self.game_json["cities"][city_name]
+        if 'events' in city_obj:
+            for event in city_obj['events']:
+                if event['type'] == "outbreak":
+                    if pathogen_name in event["pathogen"]["name"]:
+                        return True
+        return False
+
+    def lock_down_over(self, city_name: str, event_type: str, round_: int):
+        """
+        Checks if a specific containment action is in progress in a given city.
+
+        :param city_name: Name of city.
+        :param event_type: Type of caontainment
+        :param round_: Current round.
+        :return: True if currently there is no containment of given city.
+        """
+        city_obj = self.game_json["cities"][city_name]
+        if 'events' in city_obj:
+            for event in city_obj['events']:
+                if event_type in event['type']:
+                    return round_ > event['untilRound']
+        return True
 
 
-def dis_dict_to_np(elem):
-    """
-    Parses our city dict into a numpy array representation
-    .
-    :param elem: City dict
-    :return: Array representing the city info state.
-    """
-    elem_value_list = [
-        elem['vaccine_available_or_in_development'],
-        elem['medication_available_or_in_development'],
-        elem['duration'],
-        elem['lethality'],
-        elem['infectivity'],
-        elem['mobility'],
-        elem['world_prevalence']
-    ]
-    return np.array(elem_value_list)
-
-
-def merge_city_disease(city: dict, disease: dict) -> np.ndarray:
-    """
-    Takes the actions for a city and combines them with the disease actions for that city.
-
-    :param city: Dict of city actions and their activations.
-    :param disease: Dict of disease actions and their activations.
-    :return: Concatenated numpy array of actions.
-    """
-    city = city_dict_to_np_arr(city)
-    disease = city_disease_info_to_np(disease)
-    return np.concatenate((city, disease,), axis=None)
-
-
-def city_disease_info_to_np(disease: dict):
-    """
-    Parses a disease information of a city from dict into a numpy array.
-
-    :param disease: disease information of a city
-    :return: Numpy array with world prevalence of disease and the diseases threat.
-    """
-    elem_value_list = [
-        disease['world_prevalence'],
-        disease_threat(disease)
-    ]
-    return np.array(elem_value_list)
-
-
-def disease_threat(disease: dict):
-    """
-    Calculates the threat of a disease to the world population.
-
-    :param disease: Disease dict.
-    :return: Threat generated to the world.
-    """
-
-    threat = disease['world_prevalence'] * \
-          (
-                  (disease['duration']
-                   + disease['lethality']
-                   + disease['infectivity']
-                   + disease['mobility'])
-                  / 4
-          )
-    return threat

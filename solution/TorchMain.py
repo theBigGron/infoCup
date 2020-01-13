@@ -11,8 +11,9 @@ import time
 from flask import (Flask, Blueprint, flash, g, redirect, render_template, request, session, url_for)
 from flask import request
 
+import common.data_processing.utils
 from common.d3t_agent.TorchAgent import TorchAgent
-from common.data_processing.state_extractor import StateGenerator
+from common.data_processing.state_extractor import GameState
 
 from common.vis.Visualization import Visualization
 
@@ -46,8 +47,6 @@ visuals = startup_args.visualisation
 
 # Loading agent
 agent: TorchAgent = TorchAgent()
-model_dir = "pytorch_models"
-dirs = f"./{model_dir}"
 agent.load(dirs)
 print("Loaded max")
 # Loading Logger
@@ -73,7 +72,7 @@ def process_request():
 
     if game.method == 'POST':
 
-        state = StateGenerator(request.json)
+        state = GameState(request.json)
         if visuals:
             global game_json
             game_json = game.json
@@ -110,7 +109,7 @@ def process_request():
         if game.json['outcome'] == 'pending':
             if isinstance(response_, list):
                 choice_counter = 0
-                while agent.check_response(json.loads(response_[choice_counter][0]), game.json):
+                while common.data_processing.utils.valid_response(json.loads(response_[choice_counter][0]), game.json):
                     choice_counter += 1
                 return response_[choice_counter][0]
         else:

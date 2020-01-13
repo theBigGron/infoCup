@@ -49,7 +49,7 @@ class ReplayMemoryTest(unittest.TestCase):
         error = True
         if bool(replay.storage):
             if bool(replay.objects):
-                replay.flush()
+                replay.flush_buffer()
                 if not bool(replay.storage):
                     if not bool(replay.objects):
                         error = False

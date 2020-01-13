@@ -3,22 +3,22 @@
     Agent Type is a Q-Learning-Agent.
 """
 import argparse
-import io
 import gc
+import io
 import json
 import logging
 import logging.config
 import os
-import random
 import tarfile
+import time
+
 import requests
-import torch
-from flask import (Flask, Blueprint, flash, g, redirect, render_template, request, session, url_for)
-from requests import post
+from flask import (Flask, Blueprint, render_template, request)
 from flask_cors import CORS
+from requests import post
 
 from common.d3t_agent.TorchAgent import TorchAgent
-from common.data_processing.state_extractor import StateGenerator
+from common.data_processing.state_extractor import GameState
 
 app = Flask(__name__)  # pylint: disable=C0103
 CORS(app)
@@ -27,6 +27,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 # Disable flask default logging
 log = logging.getLogger('werkzeug')
 log.disabled = True
+agent: TorchAgent
 
 arg_parser = argparse.ArgumentParser(
     description="Twin (Delayed) Deep Deterministic Policy Gradient Actor to play Pandemie using PyTorch. "
@@ -47,38 +48,6 @@ arg_parser.add_argument("-ip", "--ip_out",
                         help="Sets ip to send models to.",
                         action="store",
                         )
-startup_args = arg_parser.parse_args()
-training = startup_args.no_training
-iteration_counter = 0
-
-target_ip = startup_args.ip_out if startup_args.ip_out else "http://0.0.0.0:8087"
-
-print(f"Garbage collector running: {gc.isenabled()}")
-print()
-id = requests.get(url=f"{target_ip}/get-id").content
-exploration_rate = float(requests
-                         .get(url=f"{target_ip}/get-exploration")
-                         .content
-                         )
-
-# Loading agent
-agent: TorchAgent = TorchAgent()
-try:
-    ref_models_stream = requests.get(url=f"{target_ip}/get-model").content
-    bin_ref_models = io.BytesIO(ref_models_stream)
-    models = tarfile.open(fileobj=bin_ref_models, mode="r")
-    agent.load_bin(models)
-    print("remote model loaded")
-except Exception:
-    print("Remote model has not been loaded")
-    pass
-
-# Loading Logger
-csv_logger = startup_args.logging
-cuda = ("cuda" if torch.cuda.is_available() else "cpu")
-
-game_counter = 0
-game_json = None
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -96,11 +65,10 @@ def process_request():
 
     game = request
     reward = 0
-    response_ = {"type": "endRound"}
 
     if game.method == 'POST':
 
-        state = StateGenerator(game.json)
+        state = GameState(game.json)
         rounds = game.json["round"]
 
         if state.move_done() or "error" in game.json.keys():
@@ -112,71 +80,78 @@ def process_request():
 
         if game.json['outcome'] == 'pending':
             response_ = agent.act(state)
+            return response_
         else:
             game_counter = game_counter + 1
             print(f"Spiel: {game_counter} ist vorbei - Runden: {game.json['round']} - Status: {game.json['outcome']}")
             if game.json['outcome'] == 'loss':
-                reward = -1500 / rounds
+                reward = -1 / rounds
                 logging.info("Loss: %s" % reward)
 
             elif game.json['outcome'] == 'win':
-                reward = 1500 / rounds
+                reward = 1 / rounds
                 logging.info("Win: %s" % reward)
 
-            if not training:
-                logging.info("No training.")
-            else:
-                logging.info("Reward: %s" % reward)
-                agent.update_reward(reward)
+            agent.update_reward(reward)
+            logging.info("Reward: %s" % reward)
+
+            if iteration_counter % 10 == 0:
                 logging.info("Training Model")
                 agent.train()
                 logging.info("Model Trained")
 
-                # Save all 10 iterations hours
-                iteration_counter += 1
-                gc.collect()
-                # TODO: ITERATIONEN!
-                if iteration_counter % 30 == 0:
-                    logging.info("Saving Model")
-                    tar = agent.get_models_as_tar_bin()
-                    files = {'models': ("models.tar", tar, "multipart/form-data")}
-                    post(url=f"{target_ip}/models",
-                         files=files,
-                         headers={"Authorization": f"Basic {id}", }
-                         )
-                    logging.info("Model saved")
-                    logging.warning(f"Exiting after: {iteration_counter} iterations")
-                    os._exit(0)
-
+            # Save all 10 iterations hours
+            iteration_counter += 1
             if csv_logger:
                 with open("log.csv", "a+") as f:
                     f.write(f"{iteration_counter},{game.json['outcome']},{rounds},{reward}\n")
-
-        if game.json['outcome'] == 'pending':
-            if isinstance(response_, list):
-                choice_counter = 0
-                if exploration_rate <= 0:
-                    while agent.check_response(json.loads(response_[choice_counter][0]), game.json):
-                        choice_counter += 1
-                    return response_[choice_counter][0]
-
-                else:
-                    if random.random() < exploration_rate:
-                        choice = random.choice(response_)
-                        choice_json = json.loads(choice[0])
-                        choice_json["rounds"] = 2
-                        while agent.check_response(json.loads(choice[0]), game.json):
-                            choice = random.choice(response_)
-                            choice_json = json.loads(choice[0])
-                            choice_json["rounds"] = 2
-                        return choice_json
-                    else:
-                        while agent.check_response(json.loads(response_[choice_counter][0]), game.json):
-                            choice_counter += 1
-                        return response_[choice_counter][0]
-        else:
-            logging.info("====================")
-            return "end"
+            gc.collect()
+            # TODO: ITERATIONEN!
+            if iteration_counter % 50 == 0:
+                logging.info("Saving Model")
+                tar = agent.get_models_as_tar_bin()
+                files = {'models': ("models.tar", tar, "multipart/form-data")}
+                post(url=f"{target_ip}/models",
+                     files=files,
+                     headers={"Authorization": f"Basic {id_}", }
+                     )
+                logging.info("Model saved")
+                logging.warning(f"Exiting after: {iteration_counter} iterations")
+                agent.save(1)
+                os._exit(0)  # only way to avoid flasks auto-restart
+            return "Over"
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=startup_args.port if startup_args.port else 5000, threaded=True)
+    global game_counter, iteration_counter
+
+    startup_args = arg_parser.parse_args()
+    training = startup_args.no_training
+    visuals = startup_args.visualisation
+    iteration_counter = 0
+
+    target_ip = startup_args.ip_out if startup_args.ip_out else "http://0.0.0.0:8087"
+
+    id_ = requests.get(url=f"{target_ip}/get-id").content
+
+    # Loading agent
+    agent = TorchAgent()
+    agent.exploration_rate = float(requests
+                                   .get(url=f"{target_ip}/get-exploration")
+                                   .content
+                                   )
+    try:
+        ref_models_stream = requests.get(url=f"{target_ip}/get-model").content
+        bin_ref_models = io.BytesIO(ref_models_stream)
+        models = tarfile.open(fileobj=bin_ref_models, mode="r")
+        agent.load_bin(models)
+    except Exception:
+        raise
+
+    # Loading Logger
+    csv_logger = startup_args.logging
+
+    game_counter = 0
+    game_json = None
+    app.run(debug=True, host='localhost', port=startup_args.port if startup_args.port else 50123, threaded=True)
+    #app.register_blueprint(bp)
+    #app.run(host='localhost', port=startup_args.port if startup_args.port else 5000, threaded=True)

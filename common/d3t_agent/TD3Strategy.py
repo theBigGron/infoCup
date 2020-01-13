@@ -15,15 +15,10 @@ from common.d3t_agent.ReplayMemory import ReplayBuffer
 # Selecting the device (CPU or GPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-MODEL_PATH = "./pytorch_models"
-
-if not os.path.exists(MODEL_PATH):
-    os.makedirs(MODEL_PATH)
-
 
 class TD3:
 
-    def __init__(self, state_dim, action_dim, max_action):
+    def __init__(self, state_dim, action_dim):
         """
         Crates a twin delayed deep deterministic policy gradient actor.
 
@@ -34,15 +29,13 @@ class TD3:
                            clip activation after adding noise to state_dim data.
         """
         # Loading actor and critic target
-        self.actor = Actor(state_dim, action_dim, max_action).to(device)
-        self.actor_target = Actor(state_dim, action_dim, max_action).to(device)
+        self.actor = Actor(state_dim, action_dim).to(device)
+        self.actor_target = Actor(state_dim, action_dim).to(device)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters())
         # Loading critic and critic target
         self.critic = Critic(state_dim, action_dim).to(device)
         self.critic_target = Critic(state_dim, action_dim).to(device)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters())
-        self.max_action = max_action
-        self.action_dim = action_dim
 
     def select_action(self, state: np.array):
         """
@@ -59,10 +52,10 @@ class TD3:
     def train(self,
               replay_buffer: ReplayBuffer,
               iterations: int,
-              batch_size: int = 10000,
+              batch_size: int = 1000,
               discount: float = 0.99,
-              tau: float = 0.005,
-              policy_freq: int = 2):
+              tau: float = 0.05,
+              policy_freq: int = 3):
         """
         Trains the neural network on given data. For multiple iterations.
 
@@ -90,7 +83,8 @@ class TD3:
 
             # Step 6: We add Gaussian noise to this next action a’ and we clamp it in a range of values supported by
             # the environment
-            next_action = (next_action).clamp(-self.max_action, self.max_action)
+            noise = torch.Tensor(np.random.normal(0, 0.05, 12)).to(device)
+            next_action = (next_action+noise).clamp(-1, 1)
 
             # Step 7: The two Critic targets take each the couple (s’, a’) as input and return two Q-values Qt1(s’,
             # a’) and Qt2(s’,a’) as outputs
@@ -136,37 +130,36 @@ class TD3:
                     target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
     # Making a save method to save a trained model
-    def save(self, agent_type, dir_):
+    def save(self, dir_):
         """
         Save model of given type.
 
-        Save actual model from neuronal Network in with iretation counter
+        Save actual model from neuronal Network in with itetation counter
         also overrides current newest model.
 
         :param: Type of Agent: Disease or City
         :return: None
         """
         for directory in ["max", dir_]:
-            if not os.path.exists(f'{MODEL_PATH}/{directory}'):
-                os.makedirs(f'{MODEL_PATH}/{directory}')
-            actor_path = f'{MODEL_PATH}/{directory}/{agent_type}_actor.pth.tar'
+            if not os.path.exists(f'{directory}'):
+                os.makedirs(f'{directory}')
+            actor_path = f'{directory}/actor.pth.tar'
             torch.save({'state_dict': self.actor.state_dict()}, actor_path)
 
-            actor_target_path = f'{MODEL_PATH}/{directory}/{agent_type}_actor_target.pth.tar'
+            actor_target_path = f'{directory}/actor_target.pth.tar'
             torch.save({'state_dict': self.actor_target.state_dict()}, actor_target_path)
 
-            critic_path = f'{MODEL_PATH}/{directory}/{agent_type}_critic.pth.tar'
+            critic_path = f'{directory}/critic.pth.tar'
             torch.save({'state_dict': self.critic.state_dict()}, critic_path)
 
-            critic_target_path = f'{MODEL_PATH}/{directory}/{agent_type}_critic_target.pth.tar'
+            critic_target_path = f'{directory}/critic_target.pth.tar'
             torch.save({'state_dict': self.critic_target.state_dict()}, critic_target_path)
 
-    def get_models(self, agent_type: str) -> List[Tuple[str, str, bytes]]:
+    def get_models(self, ) -> List[Tuple[str, str, bytes]]:
         """
         Retrieves pth.tar representation for all models of specified agent type.
 
-        :param agent_type: disease or city
-        :return: list containing a tuple of agent_type, agent_name, pth.tar as binary
+        :return: list containing a tuple of agent_name, pth.tar as binary
                  (City, _agent_target,City_agent_target.pth.tar as binary)
         """
         model_list = []
@@ -175,27 +168,27 @@ class TD3:
             buffer = io.BytesIO()
             torch.save({'state_dict': model.state_dict()}, buffer)
             data = buffer.getvalue()
-            model_list.append((agent_type, types_[ctr], data))
+            model_list.append((types_[ctr], data))
         return model_list
 
     # Making a load method to load a pre-trained model
-    def load(self, agent_type, directory=None) -> None:
+    def load(self, directory=None) -> None:
         """
         Load stored model weights from pth.tar files laying in given directory.
-        :param agent_type: Type of agent to load (City/Disease).
+
         :param directory: Directory to load from.
         :return: None
         """
         if directory is not None:
-            self.load_from_dir(agent_type, directory)
+            self.load_from_dir(directory)
         else:
-            if os.path.exists(f'{MODEL_PATH}/max'):
-                self.load_from_dir(agent_type, "max")
+            if os.path.exists(f'/max'):
+                self.load_from_dir("max")
             else:
                 print("path does not exist")
                 raise FileNotFoundError
 
-    def load_bin(self, models: List[tarfile.TarFile]) -> None:
+    def load_bin(self, models: List[Tuple[tarfile.TarFile, str]]) -> None:
         """
         Loads all 4 models from a list of models.
         :param models: List of models as tarFile loaded to a binary buffer.
@@ -212,18 +205,18 @@ class TD3:
             elif "critic" in model[1]:
                 self.critic.load_state_dict(checkpoint)
 
-    def load_from_dir(self, agent_type: str, directory: str) -> None:
+    def load_from_dir(self, directory: str) -> None:
         """ Loads model from dir
         Loads stored weights of given agent type from Directory.
-        :param agent_type: Type of agent to load. (City/Disease)
+
         :param directory: Directory to load model from.
         :return: None
         """
-        checkpoint = torch.load(f'{directory}/{agent_type}_actor.pth.tar')
+        checkpoint = torch.load(f'{directory}/actor.pth.tar')
         self.actor.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{directory}/{agent_type}_actor_target.pth.tar')
+        checkpoint = torch.load(f'{directory}/actor_target.pth.tar')
         self.actor_target.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{directory}/{agent_type}_critic.pth.tar')
+        checkpoint = torch.load(f'{directory}/critic.pth.tar')
         self.critic.load_state_dict(checkpoint['state_dict'])
-        checkpoint = torch.load(f'{directory}/{agent_type}_critic_target.pth.tar')
+        checkpoint = torch.load(f'{directory}/critic_target.pth.tar')
         self.critic_target.load_state_dict(checkpoint['state_dict'])
