@@ -103,7 +103,7 @@ class GameState:
                 'hygiene': SYM_VALUE_NORM_NUMBER_DICT[city_obj['hygiene']],
                 'awareness': SYM_VALUE_NORM_NUMBER_DICT[city_obj['awareness']],
                 'anti-vaccinationism': eval_anti_vaccinationism(city_obj),
-                'disease__prevalence': eval_disease_prevalence(city_obj)
+                'disease_prevalence': eval_disease_prevalence(city_obj)
             }
             # Append the dicts of individual cities to the 'global' city list
             self.city_info_list_of_dicts.append(city_info_dict)

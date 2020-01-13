@@ -5,13 +5,13 @@ import pprint
 from common.data_processing.state_extractor import GameState
 from common.data_processing.utils import eval_disease_prevalence
 from tests.data_for_tests import GameJson
-from tests.GameJson import game_json
-from tests.GameJson import game_json2
+from tests.data_for_tests.GameJson import game_json
+from tests.data_for_tests.GameJson import game_json2
 
 class TestExtractor(unittest.TestCase):
     def setUp(self):
-        self.sg1 = StateGenerator(game_json)
-        self.sg2 = StateGenerator(game_json2)
+        self.sg1 = GameState(game_json)
+        self.sg2 = GameState(game_json2)
         self.game_state = GameState(GameJson.game_json)
 
 
@@ -19,8 +19,8 @@ class TestExtractor(unittest.TestCase):
         pass
 
     def test_meta_data(self):
-        self.assertEqual(1, self.sg.round)
-        self.assertEqual(40, self.sg.points)
+        self.assertEqual(1, self.sg2.round)
+        self.assertEqual(40, self.sg2.points)
 
     def test_build_norm_disease_info_list(self):
         self.sg2.build_norm_disease_info_list()
@@ -62,7 +62,7 @@ class TestExtractor(unittest.TestCase):
             # This calculates the sum of the populations of the connected cities
             # and norms it by dividing with world_population
             'connected_city_population':0.014492887749530323,
-            'disease__prevalence': {},
+            'disease_prevalence': {},
             # These statements grab the value with given key from SYM_VALUE_NORM_NUMBER_DICT in order to
             # map --, ..., ++ to 0, ..., 1
             'economy': 0.5,
