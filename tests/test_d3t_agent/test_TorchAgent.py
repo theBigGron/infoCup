@@ -51,7 +51,7 @@ class TorchAgentTest(unittest.TestCase):
         if not path.exists("pytorch_models"):
             os.makedirs("pytorch_models")
         iteration_counter = self.get_hightest_model()
-        agent.save(iteration_counter + 1)
+        agent.save("pytorch_models/" + str(iteration_counter + 1))
         check_counter = self.get_hightest_model()
         if iteration_counter < check_counter:
             if os.path.getsize("pytorch_models/" + str(check_counter)) > 0:
@@ -91,7 +91,7 @@ class TorchAgentTest(unittest.TestCase):
                 hash_md5.update(chunk)
         hash_md5_2 = hashlib.md5()
 
-        with open("pytorch_models/max/actor.pth.tar", "rb") as f:
+        with open("max/actor.pth.tar", "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5_2.update(chunk)
 
