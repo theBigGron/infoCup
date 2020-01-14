@@ -39,7 +39,3 @@ class CriticTest(unittest.TestCase):
         self.assertTrue(critic.layer_5.in_features == state_dim + action_dim)
         self.assertTrue(critic.layer_7.in_features == 10)
         self.assertTrue(critic.layer_8.out_features == 1)
-
-
-if __name__ == '__main__':
-    unittest.main()

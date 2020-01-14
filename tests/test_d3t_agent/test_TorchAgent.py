@@ -1,7 +1,9 @@
 import filecmp
+import hashlib
 import unittest
 import os.path
 import json
+from distutils.dir_util import copy_tree
 
 from common.d3t_agent.TorchAgent import TorchAgent
 from common.data_processing.state_extractor import GameState
@@ -46,13 +48,14 @@ class TorchAgentTest(unittest.TestCase):
         saved = False
         iteration_counter = 0
         check_counter = 0
-        if path.exists("pytorch_models"):
-            iteration_counter = self.get_hightest_model()
-            agent.save(iteration_counter + 1)
-            check_counter = self.get_hightest_model()
-            if iteration_counter < check_counter:
-                if os.path.getsize("pytorch_models/" + str(check_counter)) > 0:
-                    saved = True
+        if not path.exists("pytorch_models"):
+            os.makedirs("pytorch_models")
+        iteration_counter = self.get_hightest_model()
+        agent.save(iteration_counter + 1)
+        check_counter = self.get_hightest_model()
+        if iteration_counter < check_counter:
+            if os.path.getsize("pytorch_models/" + str(check_counter)) > 0:
+                saved = True
         self.assertTrue(saved)
 
     """
@@ -78,24 +81,22 @@ class TorchAgentTest(unittest.TestCase):
     """
 
     def test_load_models(self):
-        agent.save(self.get_hightest_model())
-        if path.exists("pytorch_models/max"):
-            copy_tree("pytorch_models/max", "pytorch_models/help")
-            agent.load()
-            agent.save(self.get_hightest_model() + 1)
-            test = filecmp.dircmp("pytorch_models/max", "pytorch_models/help")
-            test_wrong = filecmp.dircmp("pytorch_models/max", "pytorch_test_models")
-            self.assertTrue(test.diff_files == [])
-            self.assertFalse(test_wrong.diff_files == [])
-        else:
-            copy_tree("pytorch_models/" + str(self.get_hightest_model()), "pytorch_models/help")
-            agent.load("pytorch_models/" + str(self.get_hightest_model()))
-            agent.save(self.get_hightest_model() + 1)
-            test = filecmp.dircmp("pytorch_models/" + str(self.get_hightest_model()), "pytorch_models/help")
-            test_wrong = filecmp.dircmp("pytorch_models/" + str(self.get_hightest_model()), "pytorch_test_models")
-            self.assertTrue(test.diff_files == [])
-            self.assertFalse(test_wrong.diff_files == [])
+        agent.load("pytorch_models/1")
+        if not path.exists("pytorch_models"):
+            os.makedirs("pytorch_models")
+        agent.save(self.get_hightest_model() + 1)
+        hash_md5 = hashlib.md5()
+        with open("pytorch_models/1/actor.pth.tar", "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        hash_md5_2 = hashlib.md5()
 
+        with open("pytorch_models/max/actor.pth.tar", "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5_2.update(chunk)
+
+        print(hash_md5.hexdigest())
+        print(hash_md5_2.hexdigest())
     """
     The act method from the TorchAgent, is used to have the network calculate any possible decisions for the cities and 
     diseases and then summarize them in a list. This list must be sorted so that the most important action is at the 
