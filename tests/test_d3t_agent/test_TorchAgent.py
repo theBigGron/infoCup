@@ -84,7 +84,7 @@ class TorchAgentTest(unittest.TestCase):
         agent.load("pytorch_models/1")
         if not path.exists("pytorch_models"):
             os.makedirs("pytorch_models")
-        agent.save(self.get_hightest_model() + 1)
+        agent.save("pytorch_models/" + str(self.get_hightest_model() + 1))
         hash_md5 = hashlib.md5()
         with open("pytorch_models/1/actor.pth.tar", "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
