@@ -23,6 +23,7 @@ function initMap() {
             icon: getCircle(magnitude)
         };
     });
+
     $(document).ready(function () {
         refresh = function () {
             $.ajax({
