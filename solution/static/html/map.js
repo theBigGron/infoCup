@@ -23,21 +23,6 @@ function initMap() {
             icon: getCircle(magnitude)
         };
     });
-    var lat_lng = {lat: 22.08672, lng: 79.42444};
-
-    var marker = new google.maps.Marker({
-        position: lat_lng,
-        map: map
-    });
-
-    marker.addListener('click', function (event) {
-        if (!hello) {
-            hello = true;
-            addCircle(event.latLng);
-        } else {
-
-        }
-    });
     $(document).ready(function () {
         refresh = function () {
             $.ajax({
