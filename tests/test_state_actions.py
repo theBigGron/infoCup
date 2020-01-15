@@ -47,7 +47,8 @@ class TestActionInfo(TestCase):
     def test_compare_info(self):
         inf1 = ActionInfo("None", "None", None, None, 0.0, "None", 1, )
         inf2 = ActionInfo("None", "None", None, None, 0.1, "None", 1,)
-        inf3 = ActionInfo("None", "None", None, None, 0.1, "None", 1, )
+        inf3 = \
+            ActionInfo("None", "None", None, None, 0.1, "None", 1, )
 
         self.assertTrue(inf1 < inf2)
         self.assertFalse(inf2 < inf1)
