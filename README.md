@@ -19,69 +19,52 @@ Die Anwendungen selber laufen mit den jeweilig richtigen Source Dateien in Docke
 ist für jede Anwendung ein eigenes Dockerfile spezifiert. Nachfolgend ist beschrieben, wie Sie
 fürs Debugging auch lokal (ohne docker) ausgeführt werden können.
 
-## Anleitungen
-[Anleitungen für Master](master/README.md)<br/>
-[Anleitungen für Slave](slave/README.md)<br/>
-[Anleitungen für Solution](solution/README.MD)
-
-## Build Project
-### Manually
-0. Install python3 and python3-dev on Ubuntu with
+## Bauen des Projektes
+### Manuell
+0. Installieren von python3 und python3-dev unter Ubuntu mit
 ```sh
 sudo apt-get install python3 python3-dev
 ```
-1. Install virtualenv globally with
+1. Virtualenv global installieren mit
 ```sh
 sudo -H pip3 install virtualenv
 ```
-2. Create an virtual environment and source it with:
+2. Eine virtuelle Umgebung erstellen und source mit:
 ```sh
 virtualenv venv -p python3.6
 source venv/bin/activate
 ```
-3. Install requirements with:
+3. Projektabhängigkeiten installieren mit:
 ```sh
 python3 -m pip install -r requirements.txt
 ```
 
-### Freeze pip requirements
-In order to be able to install all required dependencies, freeze
-the pip3-dependencies to requirements.txt with
-```sh
-python3 -m pip freeze > requirements.txt
-```
-### With Docker [Deprecated]
-Run
-```sh
-docker image build -t informaticup:1.0 .
-```
-inside `informatiCup2020`-dir.
-
 ## Deployment
+Zuerst muss der Master gestartet werden, dann können
+beliebig viele Slaves gestartet werden, die das Spiel
+mit der ic20 spielt. Das so gewonnene Modell im Master,
+kann dann für das Solutions-Projekt bereitgestellt werden.
+Dieses trainiert dann nicht mehr mit der ic20 Simulation
+und hat die Visualisierung, hat aber weiter sonst durch
+das commons-Projekt den gleichen Code.
 
-Es gibt zwei Applikationen um die Modelle zu trainieren. Es gibt dabei unterschiedliche Docker Container die gestartet werden müssen. Es gibt einen Master, welcher zuerst gestartet werden muss. Der Master verwaltet die Modelle der Slave Modelle. Dann können die Slave Modelle gestartet werden.
-
-Im Ordner common findet sich der Code welcher von sowohl von dem Server,
-als auch von den Client-Applikationen verwendet wird.
+## Anleitungen
+[Anleitungen für Master](master/README.md)<br/>
+[Anleitungen für Slave](slave/README.md)<br/>
+[Anleitungen für Solution](solution/README.md)
 
 ### Docker commands
-Starten des Master Containers.
+**Hinweis:**
+Mit der Option `-it` eines `docker run`-Befehls, veranlasst den Docker Container
+im Interaktiven Modus zu starten, sodass mit
+
+```shell script
+ docker attach <name>
 ```
-docker run --restart=always -p 8087:8087 master:latest
-```
-Starten des slave Containers.
-```
-docker run -d --restart=always slave:latest
-```
-```
-docker cp 9c73f3c19580:/home/app/models.db .
-```
-```
-docker events
-```
-```
-docker update --restart=no my-container
-```
+
+zu dem Docker Container verbunden werden kann.
+Mit `STRG-P STRG-Q` kann dann der Container wieder detached werden
+und das verbundene Terminal verlassen werden.
 
 ## Create/Run Tests
 

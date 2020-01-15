@@ -1,4 +1,4 @@
-#zSolution.Dockerile
+# zSolution.Dockerile
 # Base File
 FROM debian:latest
 RUN apt update
@@ -11,4 +11,10 @@ WORKDIR /home/app/src/common
 COPY common .
 RUN python3 -m pip install -r requirements.txt
 
+
+WORKDIR /home/app/src
 COPY solution .
+
+
+ENTRYPOINT ["./start.sh"]
+CMD []

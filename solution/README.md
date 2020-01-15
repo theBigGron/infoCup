@@ -18,21 +18,23 @@ kann das solutions-Projekt gebaut werden, dann
 kann es mit
 
 ```shell script
- docker run -itd --restart=always --name sol1 solution:latest
+ docker run -itd -p 50123:50123 --name sol1 solution:latest
 ```
 
 gestartet werden.
 
-Mit der Option `-it` des obigen `docker run`-Befehls, veranlasst den Docker Container
-im Interaktiven Modus zu sein, sodass mit
-
-```shell script
- docker attach sol1
-```
-
-zu dem Docker Container verbunden werden kann.
-Mit `STRG-P STRG-Q` kann dann der Container wieder detached werden
-und das verbundene Terminal verlassen werden.
-
 
 ## Starten der Visualisierung
+
+Das solutions-Projekt kann mit dem Option `-vi`
+mit aktivierter Visualisierung gestartet werden:
+```shell script
+ docker run -itd -p 50123:50123 --name sol1 solution:latest -vi
+```
+
+## Entfernen des Solution Docker Containers
+Mit
+```shell script
+ docker stop sol1 && docker rm sol1
+```
+kann der gestartete solutions docker container gestoppt und entfernt werden. 
