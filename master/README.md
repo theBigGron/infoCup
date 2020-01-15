@@ -3,7 +3,7 @@
 ## Bauen und Starten des Docker-Containers
 Mit 
 ```shell script
- docker build -t solution -f zSolution.Dockerfile .
+ docker build -t master -f zMaster.Dockerfile .
 ```
 kann das master-Projekt gebaut werden, dann
 kann es mit
