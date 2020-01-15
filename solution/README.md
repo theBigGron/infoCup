@@ -5,7 +5,7 @@
 cd solution
 rm -r pytorch_models
 mkdir pytorch_models
-curl localhost:8087 > model.tar
+curl localhost:8087/get-model > model.tar
 tar -xf model.tar -C pytorch_models
 ```
 
