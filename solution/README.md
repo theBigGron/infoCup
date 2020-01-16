@@ -7,6 +7,7 @@ rm -r pytorch_models
 mkdir pytorch_models
 curl localhost:8087/get-model > model.tar
 tar -xf model.tar -C pytorch_models
+cd ..
 ```
 
 ## Bauen und Starten des Docker-Containers
