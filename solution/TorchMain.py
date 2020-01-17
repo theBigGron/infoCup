@@ -49,9 +49,9 @@ visuals = startup_args.visualisation
 
 # Loading agent
 agent: TorchAgent = TorchAgent()
-#model_dir = "pytorch_models"
-#dirs = f"./{model_dir}"
-#agent.load(dirs)
+model_dir = "pytorch_models"
+dirs = f"./{model_dir}"
+agent.load(dirs)
 print("Loaded max")
 # Loading Logger
 csv_logger = startup_args.logging
