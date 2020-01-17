@@ -52,6 +52,7 @@ agent: TorchAgent = TorchAgent()
 model_dir = "pytorch_models"
 dirs = f"./{model_dir}"
 agent.load(dirs)
+agent.exploration_rate = 0
 print("Loaded max")
 # Loading Logger
 csv_logger = startup_args.logging
@@ -69,10 +70,7 @@ def process_request():
     global agent, game_counter, visuals  # pylint: disable=C0103, global-statement
 
     logging.basicConfig(filename='example.log', level=logging.DEBUG)
-
     game = request
-    reward = 0
-    response_ = {"type": "endRound"}
 
     if game.method == 'POST':
 
@@ -83,24 +81,20 @@ def process_request():
             time.sleep(2)
         rounds = game.json["round"]
 
-        if state.move_done() or "error" in game.json.keys():
-            if "error" in game.json.keys():
-                logging.error("Error in json. Ending Round %s" % state.get_errors())
-            return {"type": "endRound"}
-
         logging.info("Round: %s" % rounds)
 
         if game.json['outcome'] == 'pending':
             response_ = agent.act(state)
+            return response_
         else:
             game_counter = game_counter + 1
             print(f"Spiel: {game_counter} ist vorbei - Runden: {game.json['round']} - Status: {game.json['outcome']}")
             if game.json['outcome'] == 'loss':
-                reward = -1500 / rounds
+                reward = -1 / rounds
                 logging.info("Loss: %s" % reward)
 
             elif game.json['outcome'] == 'win':
-                reward = 1500 / rounds
+                reward = 1 / rounds
                 logging.info("Win: %s" % reward)
 
                 logging.info("Reward would have been: %s" % reward)
@@ -109,15 +103,8 @@ def process_request():
                 with open("log.csv", "a+") as f:
                     f.write(f"{game_counter},{game.json['outcome']},{rounds},{reward}\n")
 
-        if game.json['outcome'] == 'pending':
-            if isinstance(response_, list):
-                choice_counter = 0
-                while common.data_processing.utils.valid_response(json.loads(response_[choice_counter][0]), game.json):
-                    choice_counter += 1
-                return response_[choice_counter][0]
-        else:
-            logging.info("====================")
-            return "end"
+        logging.info("====================")
+        return "end"
 
 
 @app.route('/get_game_json', methods=['GET'])
