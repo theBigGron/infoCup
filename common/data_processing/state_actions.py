@@ -3,7 +3,7 @@ from collections import OrderedDict
 from numpy import ndarray, nditer
 
 ENUM_ACTIONS = [
-    {"message": '{type:"endRound"}', "fixed_costs": 0, "variable_costs": 0},
+    {"message": '{"type":"endRound"}', "fixed_costs": 0, "variable_costs": 0},
     {"message": '{{"type": "putUnderQuarantine", "city": "{city}", "rounds": {rounds}}}',
      "fixed_costs": 10, "variable_costs": 20},
     {"message": '{{"type": "closeAirport", "city": "{city}", "rounds": {rounds}}}',
