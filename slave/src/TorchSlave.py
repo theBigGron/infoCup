@@ -91,20 +91,19 @@ def process_request():
 
             agent.update_reward(reward)
             logging.info("Reward: %s" % reward)
-
-            if iteration_counter % 10 == 0:
+            iteration_counter += 1
+            if iteration_counter % 5 == 0:
                 logging.info("Training Model")
                 agent.train()
                 logging.info("Model Trained")
 
             # Save all 10 iterations hours
-            iteration_counter += 1
+
             if csv_logger:
                 with open("log.csv", "a+") as f:
                     f.write(f"{iteration_counter},{game.json['outcome']},{rounds},{reward}\n")
             gc.collect()
-            # TODO: ITERATIONEN!
-            if iteration_counter % 50 == 0:
+            if iteration_counter % 30 == 0:
                 logging.info("Saving Model")
                 tar = agent.get_models_as_tar_bin()
                 files = {'models': ("models.tar", tar, "multipart/form-data")}
@@ -114,7 +113,6 @@ def process_request():
                      )
                 logging.info("Model saved")
                 logging.warning(f"Exiting after: {iteration_counter} iterations")
-                agent.save(1)
                 os._exit(0)  # only way to avoid flasks auto-restart
             return "Over"
 
@@ -125,7 +123,7 @@ if __name__ == '__main__':
     training = startup_args.no_training
     iteration_counter = 0
 
-    target_ip = startup_args.ip_out if startup_args.ip_out else "http://0.0.0.0:8087"
+    target_ip = startup_args.ip_out if startup_args.ip_out else "http://accum.informatik.uni-oldenburg.de:11001"
 
     id_ = requests.get(url=f"{target_ip}/get-id").content
 
