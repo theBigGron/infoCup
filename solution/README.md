@@ -56,3 +56,21 @@ Gepushed werden kann es dann mit:
 ```shell script
 docker push pgronau/infocup:solution
 ```
+
+## Solution von DockerHub pullen
+Zunächst muss man sich bei dem DockerHub-Repository anmelden mit:
+```shell script
+docker login  --username=pgronau --password=5e3a7fe8-2d31-4a8e-ba1f-5782214a8556
+```
+
+Pullt werden kann es dann mit:
+```shell script
+docker pull pgronau/infocup:solution
+```
+
+Nach dem pullen, kann es mit
+
+```shell script
+ docker run -itd -p 50123:50123 --name sol1 pgronau/infocup:solution
+```
+gestartet werden.
